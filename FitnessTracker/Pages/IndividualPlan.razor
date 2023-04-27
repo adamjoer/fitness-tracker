@@ -1,0 +1,46 @@
+﻿@page "/plans/{id}"
+@attribute [Authorize]
+
+<PageTitle>Fitness Plan | FitnessTracker</PageTitle>
+
+@using FitnessTracker.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+
+<h1>Fitness Plan</h1>
+
+@if (FitnessPlan == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <FitnessPlanDisplay FitnessPlan="FitnessPlan"/>
+}
+
+@code {
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    private FitnessPlan? FitnessPlan { get; set; }
+
+    private async Task LoadFitnessPlan()
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var fitnessPlan = await context.FitnessPlans.FindAsync(Id);
+        if (fitnessPlan == null)
+        {
+            // FIXME: return 404
+            return;
+        }
+
+        FitnessPlan = fitnessPlan;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadFitnessPlan();
+    }
+
+}

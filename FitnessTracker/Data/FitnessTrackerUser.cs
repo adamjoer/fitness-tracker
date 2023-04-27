@@ -5,6 +5,11 @@ namespace FitnessTracker.Data;
 
 public class FitnessTrackerUser : IdentityUser
 {
+    public FitnessTrackerUser()
+    {
+        FitnessPlans = new HashSet<FitnessPlan>();
+    }
+
     [Required]
     [MaxLength(100)]
     public string FirstName { get; set; } = string.Empty;
@@ -12,4 +17,6 @@ public class FitnessTrackerUser : IdentityUser
     [Required]
     [MaxLength(100)]
     public string LastName { get; set; } = string.Empty;
+
+    private ICollection<FitnessPlan> FitnessPlans { get; set; }
 }

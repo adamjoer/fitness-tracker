@@ -1,0 +1,79 @@
+﻿@page "/plans"
+@attribute [Authorize]
+
+@using FitnessTracker.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<FitnessTrackerUser> UserManager;
+@inject AuthenticationStateProvider AuthProvider;
+@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+
+<PageTitle>Fitness Plans | FitnessTracker</PageTitle>
+
+<h1>Fitness Plans</h1>
+
+<EditForm Model="@_submitFitnessPlan" OnSubmit="@HandleSubmit">
+    <InputText @bind-Value="_submitFitnessPlan.Title"/>
+    <InputDate @bind-Value="_submitFitnessPlan.Date"/>
+    <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
+    <button type="submit">Submit</button>
+</EditForm>
+
+@if (FitnessPlans == null)
+{
+    <p>Loading...</p>
+}
+else if (FitnessPlans.Count <= 0)
+{
+    <p>No Fitness plans found!</p>
+}
+else
+{
+    @foreach (var fitnessPlan in FitnessPlans)
+    {
+        <FitnessPlanDisplay FitnessPlan="@fitnessPlan"/>
+    }
+}
+
+@code {
+
+    private FitnessPlan _submitFitnessPlan = new()
+    {
+        Date = DateTime.Today
+    };
+
+    private List<FitnessPlan>? FitnessPlans { get; set; }
+
+    private async void HandleSubmit()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        _submitFitnessPlan.UserId = UserManager.GetUserId(authState.User);
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.FitnessPlans.Add(_submitFitnessPlan);
+            _submitFitnessPlan = new FitnessPlan
+            {
+                Date = DateTime.Today
+            };
+
+            await context.SaveChangesAsync();
+        }
+        await LoadFitnessPlans();
+    }
+
+    private async Task LoadFitnessPlans()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = UserManager.GetUserId(authState.User);
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+            FitnessPlans = await context.FitnessPlans.Where(plan => plan.UserId == userId).ToListAsync();
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFitnessPlans();
+    }
+
+}

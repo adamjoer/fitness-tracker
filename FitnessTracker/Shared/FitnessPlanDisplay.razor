@@ -1,0 +1,22 @@
+﻿@using FitnessTracker.Data
+@using System.Globalization
+
+<div class="card">
+    <NavLink href=@{$"plans/{FitnessPlan.Id}"}>
+        <h5 class="card-title">@FitnessPlan.Title</h5>
+    </NavLink>
+    <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
+    <div class="list-group list-group-flush">
+        @foreach (var item in FitnessPlan.WorkoutItems)
+        {
+            <li class="list-group-item">@item.Title</li>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public FitnessPlan FitnessPlan { get; set; } = null!;
+
+}
