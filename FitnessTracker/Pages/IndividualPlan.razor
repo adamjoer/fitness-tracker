@@ -28,7 +28,10 @@ else
     private async Task LoadFitnessPlan()
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
-        var fitnessPlan = await context.FitnessPlans.FindAsync(Id);
+        var fitnessPlan = await context.FitnessPlans
+            .Include(plan => plan.WorkoutItems
+                .OrderBy(item => item.Index))
+            .FirstOrDefaultAsync(plan => plan.Id == Id);
         if (fitnessPlan == null)
         {
             // FIXME: return 404
