@@ -1,16 +1,31 @@
 ﻿@using FitnessTracker.Data
 @using System.Globalization
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
 
 <div class="card">
-    <NavLink href=@{$"plans/{FitnessPlan.Id}"}>
+    <NavLink href=@($"plans/{FitnessPlan.Id}")>
         <h5 class="card-title">@FitnessPlan.Title</h5>
     </NavLink>
     <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
+    <p>Intensity: @FitnessPlan.Intensity</p>
     <div class="list-group list-group-flush">
-        @foreach (var item in FitnessPlan.WorkoutItems)
-        {
-            <li class="list-group-item">@item.Title</li>
-        }
+        <EditForm EditContext="@_editContext">
+            @foreach (var item in FitnessPlan.WorkoutItems)
+            {
+                <li class="list-group-item">
+                    <b>@item.Title</b>
+                    <InputCheckbox @bind-Value="item.IsCompleted"/>
+                </li>
+            }
+        </EditForm>
+        <li class="list-group-item">
+            <EditForm Model="@_newItem" OnSubmit="@HandleItemSubmit">
+                <InputText @bind-Value="@_newItem.Title"/>
+                <InputCheckbox @bind-Value="@_newItem.IsCompleted"/>
+                <button type="submit">Add</button>
+            </EditForm>
+        </li>
     </div>
 </div>
 
@@ -18,5 +33,47 @@
 
     [Parameter, EditorRequired]
     public FitnessPlan FitnessPlan { get; set; } = null!;
+
+    private EditContext? _editContext;
+
+    private WorkoutItem _newItem = new();
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(FitnessPlan);
+        _editContext.OnFieldChanged += OnFieldChanged;
+    }
+
+    private async void OnFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        // FIXME: This updates every single workout item in the plan every time a single item is modified.
+        //        Find a way to instead update only the one workout item.
+        await HandleSubmit();
+    }
+
+    private async Task HandleSubmit()
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        context.FitnessPlans.Update(FitnessPlan);
+        await context.SaveChangesAsync();
+    }
+
+    private async Task HandleItemSubmit()
+    {
+        _newItem.FitnessPlanId = FitnessPlan.Id!;
+
+        var lastItem = FitnessPlan.WorkoutItems.LastOrDefault();
+        _newItem.Index = lastItem != null ? lastItem.Index + 1 : 0;
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.WorkoutItems.Add(_newItem);
+            FitnessPlan.WorkoutItems.Add(_newItem);
+
+            _newItem = new WorkoutItem();
+            await context.SaveChangesAsync();
+        }
+        StateHasChanged();
+    }
 
 }
