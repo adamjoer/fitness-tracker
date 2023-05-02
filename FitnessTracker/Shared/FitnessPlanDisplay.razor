@@ -41,20 +41,16 @@
     protected override void OnInitialized()
     {
         _editContext = new EditContext(FitnessPlan);
-        _editContext.OnFieldChanged += OnFieldChanged;
+        _editContext.OnFieldChanged += OnFitnessPlanFieldChanged;
     }
 
-    private async void OnFieldChanged(object? sender, FieldChangedEventArgs e)
+    private async void OnFitnessPlanFieldChanged(object? sender, FieldChangedEventArgs e)
     {
-        // FIXME: This updates every single workout item in the plan every time a single item is modified.
-        //        Find a way to instead update only the one workout item.
-        await HandleSubmit();
-    }
+        if (e.FieldIdentifier.FieldName != "IsCompleted" || e.FieldIdentifier.Model is not WorkoutItem item)
+            return;
 
-    private async Task HandleSubmit()
-    {
         await using var context = await ContextFactory.CreateDbContextAsync();
-        context.FitnessPlans.Update(FitnessPlan);
+        context.WorkoutItems.Update(item);
         await context.SaveChangesAsync();
     }
 
