@@ -5,14 +5,14 @@
 <CascadingAuthenticationState>
     <AuthorizeView>
         <Authorized>
-            <a href="Identity/Account/Manage">Hello, @FullName!</a>
-            <form method="post" action="Identity/Account/LogOut">
-                <button type="submit" class="nav-link btn btn-link">Log out</button>
+            <a href="identity/account/manage">Hello, @FullName!</a>
+            <form method="post" action="identity/account/logout">
+                <button type="submit" class="btn btn-link">Log out</button>
             </form>
         </Authorized>
         <NotAuthorized>
-            <a href="Identity/Account/Register">Register</a>
-            <a href="Identity/Account/Login">Log in</a>
+            <a href="identity/account/register">Register</a>
+            <a href="identity/account/login">Log in</a>
         </NotAuthorized>
     </AuthorizeView>
 </CascadingAuthenticationState>
