@@ -1,0 +1,147 @@
+﻿@page "/interests"
+@attribute [Authorize]
+
+@using Microsoft.EntityFrameworkCore
+@using FitnessTracker.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<FitnessTrackerUser> UserManager;
+@inject AuthenticationStateProvider AuthProvider;
+@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+
+<PageTitle>Interests | FitnessTracker</PageTitle>
+
+<h1>Interests</h1>
+
+<h3>Your interests</h3>
+@if (UserInterests == null)
+{
+    <p>Loading...</p>
+}
+else if (UserInterests.Count <= 0)
+{
+    <p>No interests found! Add some below</p>
+}
+else
+{
+    <ol>
+        @foreach (var interest in UserInterests)
+        {
+            <li>
+                @interest.Type.Name
+                @interest.Intensity
+            </li>
+        }
+    </ol>
+}
+
+<h3>Search for new interests</h3>
+<form @onsubmit="@OnSearch">
+    <input @bind="@SearchQuery"/>
+</form>
+
+@if (SearchResults == null)
+{
+    <p>Search for workout types</p>
+}
+else if (SearchResults.Count <= 0)
+{
+    <p>No results!</p>
+    <button @onclick="@OnSubmit">Submit</button>
+}
+else
+{
+    <ol style="text-transform: capitalize">
+        @foreach (var result in SearchResults)
+        {
+            <li>
+                @result.Name
+                @if (UserInterests != null && !UserInterests.Exists(foo => foo.TypeId == result.Id))
+                {
+                    <button @onclick="() => AddInterest(result)">Add to your interests</button>
+                }
+            </li>
+        }
+    </ol>
+}
+
+@code {
+
+    private List<FitnessInterest>? UserInterests { get; set; }
+
+    private string SearchQuery { get; set; } = string.Empty;
+
+    private List<WorkoutType>? SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = UserManager.GetUserId(authState.User);
+
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        UserInterests = await context.FitnessInterests
+            .Include(interest => interest.Type)
+            .Where(interest => interest.UserId == userId)
+            .ToListAsync();
+    }
+
+    private async void OnSearch()
+    {
+        if (SearchQuery.Length <= 0)
+        {
+            SearchResults = null;
+            return;
+        }
+
+        var lowerCaseSearchQuery = SearchQuery.ToLowerInvariant();
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            SearchResults = await context.WorkoutTypes
+                .Where(type => type.Name.Contains(lowerCaseSearchQuery))
+                .ToListAsync();
+        }
+        StateHasChanged();
+    }
+
+    private async void OnSubmit()
+    {
+        var newType = new WorkoutType
+        {
+            Name = SearchQuery.ToLowerInvariant()
+        };
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.WorkoutTypes.Add(newType);
+            await context.SaveChangesAsync();
+        }
+
+        SearchQuery = string.Empty;
+        SearchResults = null;
+        StateHasChanged();
+    }
+
+    private async void AddInterest(WorkoutType type)
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = UserManager.GetUserId(authState.User);
+
+        var newInterest = new FitnessInterest
+        {
+            Intensity = new Random().Next(1, 10),
+            TypeId = type.Id!,
+            UserId = userId
+        };
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.FitnessInterests.Add(newInterest);
+            await context.SaveChangesAsync();
+        }
+
+        newInterest.Type = type;
+        UserInterests?.Add(newInterest);
+        StateHasChanged();
+    }
+
+}

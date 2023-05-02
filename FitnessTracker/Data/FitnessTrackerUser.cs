@@ -8,6 +8,7 @@ public class FitnessTrackerUser : IdentityUser
     public FitnessTrackerUser()
     {
         FitnessPlans = new HashSet<FitnessPlan>();
+        FitnessInterests = new HashSet<FitnessInterest>();
     }
 
     [Required]
@@ -19,4 +20,6 @@ public class FitnessTrackerUser : IdentityUser
     public string LastName { get; set; } = string.Empty;
 
     public ICollection<FitnessPlan> FitnessPlans { get; set; }
+
+    public ICollection<FitnessInterest> FitnessInterests { get; set; }
 }
