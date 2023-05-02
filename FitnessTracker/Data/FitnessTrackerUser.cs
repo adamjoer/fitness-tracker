@@ -18,5 +18,5 @@ public class FitnessTrackerUser : IdentityUser
     [MaxLength(100)]
     public string LastName { get; set; } = string.Empty;
 
-    private ICollection<FitnessPlan> FitnessPlans { get; set; }
+    public ICollection<FitnessPlan> FitnessPlans { get; set; }
 }
