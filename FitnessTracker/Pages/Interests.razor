@@ -74,6 +74,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await UpdateUserInterests();
+    }
+
+    private async Task UpdateUserInterests()
+    {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userId = UserManager.GetUserId(authState.User);
 
@@ -137,8 +142,7 @@ else
             await context.SaveChangesAsync();
         }
 
-        newInterest.Type = type;
-        UserInterests?.Add(newInterest);
+        await UpdateUserInterests();
         StateHasChanged();
     }
 
