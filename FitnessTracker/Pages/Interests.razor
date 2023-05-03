@@ -116,9 +116,7 @@ else
             await context.SaveChangesAsync();
         }
 
-        SearchQuery = string.Empty;
-        SearchResults = null;
-        StateHasChanged();
+        OnSearch();
     }
 
     private async void AddInterest(WorkoutType type)
