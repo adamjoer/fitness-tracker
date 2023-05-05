@@ -9,12 +9,18 @@
 
 <h1>Fitness Plan</h1>
 
-@if (FitnessPlan == null)
+@if (NotFound)
+{
+    <PageTitle>Not Found | FitnessTracker</PageTitle>
+    <p>Fitness plan not found</p>
+}
+else if (FitnessPlan == null)
 {
     <p>Loading...</p>
 }
 else
 {
+    <PageTitle>@FitnessPlan.Title | FitnessTracker</PageTitle>
     <FitnessPlanDisplay FitnessPlan="FitnessPlan"/>
 }
 
@@ -22,6 +28,8 @@ else
 
     [Parameter]
     public string? Id { get; set; }
+
+    private bool NotFound { get; set; }
 
     private FitnessPlan? FitnessPlan { get; set; }
 
@@ -34,7 +42,7 @@ else
             .FirstOrDefaultAsync(plan => plan.Id == Id);
         if (fitnessPlan == null)
         {
-            // FIXME: return 404
+            NotFound = true;
             return;
         }
 
