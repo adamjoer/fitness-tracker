@@ -13,9 +13,21 @@
         <EditForm EditContext="@_editContext">
             @foreach (var item in FitnessPlan.WorkoutItems)
             {
-                <li class="list-group-item">
-                    <b>@item.Title</b>
-                    <InputCheckbox @bind-Value="item.IsCompleted"/>
+                <li class="list-group-item" style="display: flex; justify-content: space-between">
+                    <div>
+                        <b>@item.Title</b>
+                        <InputCheckbox @bind-Value="item.IsCompleted"/>
+                    </div>
+                    <div>
+                        @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.First())
+                        {
+                            <button @onclick="() => MoveItem(item, true)">Up</button>
+                        }
+                        @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.Last())
+                        {
+                            <button @onclick="() => MoveItem(item, false)">Down</button>
+                        }
+                    </div>
                 </li>
             }
         </EditForm>
@@ -69,6 +81,31 @@
             _newItem = new WorkoutItem();
             await context.SaveChangesAsync();
         }
+        StateHasChanged();
+    }
+
+    private async Task MoveItem(WorkoutItem item, bool moveUp)
+    {
+        if (FitnessPlan.WorkoutItems.Count <= 1)
+            return;
+
+        var otherMovingItem = moveUp
+            ? FitnessPlan.WorkoutItems.TakeWhile(x => x.Index != item.Index).LastOrDefault()
+            : FitnessPlan.WorkoutItems.SkipWhile(x => x.Index != item.Index).Skip(1).FirstOrDefault();
+
+        if (otherMovingItem == null)
+            return;
+
+        (item.Index, otherMovingItem.Index) = (otherMovingItem.Index, item.Index);
+
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.WorkoutItems.Update(item);
+            context.WorkoutItems.Update(otherMovingItem);
+            await context.SaveChangesAsync();
+        }
+
+        FitnessPlan.WorkoutItems = FitnessPlan.WorkoutItems.OrderBy(x => x.Index).ToList();
         StateHasChanged();
     }
 
