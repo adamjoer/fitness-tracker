@@ -91,7 +91,7 @@ else
 
     private async void OnSearch()
     {
-        if (SearchQuery.Length <= 0)
+        if (SearchQuery.Length is <= 0 or > 256)
         {
             SearchResults = null;
             return;
