@@ -1,5 +1,6 @@
 ﻿@using FitnessTracker.Data
 @using System.Globalization
+@using Humanizer
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
 
@@ -27,6 +28,7 @@
                         {
                             <button @onclick="() => MoveItem(item, false)">Down</button>
                         }
+                        <button @onclick="() => DeleteItem(item)">Delete</button>
                     </div>
                 </li>
             }
@@ -106,6 +108,18 @@
         }
 
         FitnessPlan.WorkoutItems = FitnessPlan.WorkoutItems.OrderBy(x => x.Index).ToList();
+        StateHasChanged();
+    }
+
+    private async Task DeleteItem(WorkoutItem item)
+    {
+        await using (var context = await ContextFactory.CreateDbContextAsync())
+        {
+            context.WorkoutItems.Remove(item);
+            await context.SaveChangesAsync();
+        }
+
+        FitnessPlan.WorkoutItems.Remove(item);
         StateHasChanged();
     }
 
