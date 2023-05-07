@@ -6,7 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
-@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+@inject FitnessInterestService FitnessInterestService;
 
 <PageTitle>Interests | FitnessTracker</PageTitle>
 
@@ -82,11 +82,7 @@ else
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userId = UserManager.GetUserId(authState.User);
 
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        UserInterests = await context.FitnessInterests
-            .Include(interest => interest.Type)
-            .Where(interest => interest.UserId == userId)
-            .ToListAsync();
+        UserInterests = await FitnessInterestService.GetUserInterests(userId);
     }
 
     private async void OnSearch()
@@ -97,29 +93,16 @@ else
             return;
         }
 
-        var lowerCaseSearchQuery = SearchQuery.ToLowerInvariant();
-
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            SearchResults = await context.WorkoutTypes
-                .Where(type => type.Name.Contains(lowerCaseSearchQuery))
-                .ToListAsync();
-        }
+        SearchResults = await FitnessInterestService.SearchForWorkoutType(SearchQuery);
         StateHasChanged();
     }
 
     private async void OnSubmit()
     {
-        var newType = new WorkoutType
+        await FitnessInterestService.AddWorkoutType(new WorkoutType
         {
-            Name = SearchQuery.ToLowerInvariant()
-        };
-
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.WorkoutTypes.Add(newType);
-            await context.SaveChangesAsync();
-        }
+            Name = SearchQuery
+        });
 
         OnSearch();
     }
@@ -129,18 +112,12 @@ else
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userId = UserManager.GetUserId(authState.User);
 
-        var newInterest = new FitnessInterest
+        await FitnessInterestService.AddUserInterest(new FitnessInterest
         {
             Intensity = new Random().Next(1, 10),
             TypeId = type.Id!,
             UserId = userId
-        };
-
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.FitnessInterests.Add(newInterest);
-            await context.SaveChangesAsync();
-        }
+        });
 
         await UpdateUserInterests();
         StateHasChanged();
