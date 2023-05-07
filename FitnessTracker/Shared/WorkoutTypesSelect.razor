@@ -1,0 +1,62 @@
+﻿@using FitnessTracker.Data
+@inject FitnessInterestService FitnessInterestService;
+@inject ILogger<WorkoutTypesSelect> Logger;
+
+<div class="autocomplete w-25">
+    <input @bind="SearchQuery" @oninput="HandleInput" class="form-control filter"/>
+    @if (_workoutTypes is not null)
+    {
+        <ul class="options">
+            @if (_workoutTypes.Any())
+            {
+                @foreach (var type in _workoutTypes)
+                {
+                    <li class="option" @onclick="() => SelectWorkoutType(type)">
+                        <span class="option-text">@type.Name</span>
+                    </li>
+                }
+            }
+            else
+            {
+                <li class="disabled option">No results</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public WorkoutType WorkoutType { get; set; }
+
+    [Parameter]
+    public EventCallback<WorkoutType> WorkoutTypeChanged { get; set; } 
+
+    private string SearchQuery { get; set; }
+    
+    private List<WorkoutType>? _workoutTypes;
+
+    async Task HandleInput(ChangeEventArgs e)
+    {
+        var searchQuery = e.Value?.ToString();
+        if (searchQuery != null && searchQuery.Any())
+        {
+            _workoutTypes = await FitnessInterestService.SearchForWorkoutType(searchQuery);
+        }
+        else
+        {
+            _workoutTypes = null;
+        }
+    }
+
+    private async Task SelectWorkoutType(WorkoutType type)
+    {
+        Logger.LogInformation($"Selecting workout type with name \"{type.Name}\" and id \"{type.Id}\"");
+
+        _workoutTypes = null;
+        SearchQuery = string.Empty;
+        
+        await WorkoutTypeChanged.InvokeAsync(type);
+    }
+
+}
