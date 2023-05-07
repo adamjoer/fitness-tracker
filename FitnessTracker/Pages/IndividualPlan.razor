@@ -4,17 +4,22 @@
 <PageTitle>Fitness Plan | FitnessTracker</PageTitle>
 
 @using FitnessTracker.Data
-@using Microsoft.EntityFrameworkCore
-@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+@inject FitnessPlanService FitnessPlanService;
 
 <h1>Fitness Plan</h1>
 
-@if (FitnessPlan == null)
+@if (NotFound)
+{
+    <PageTitle>Not Found | FitnessTracker</PageTitle>
+    <p>Fitness plan not found</p>
+}
+else if (FitnessPlan == null)
 {
     <p>Loading...</p>
 }
 else
 {
+    <PageTitle>@FitnessPlan.Title | FitnessTracker</PageTitle>
     <FitnessPlanDisplay FitnessPlan="FitnessPlan"/>
 }
 
@@ -23,18 +28,22 @@ else
     [Parameter]
     public string? Id { get; set; }
 
+    private bool NotFound { get; set; }
+
     private FitnessPlan? FitnessPlan { get; set; }
 
     private async Task LoadFitnessPlan()
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        var fitnessPlan = await context.FitnessPlans
-            .Include(plan => plan.WorkoutItems
-                .OrderBy(item => item.Index))
-            .FirstOrDefaultAsync(plan => plan.Id == Id);
+        if (Id == null)
+        {
+            NotFound = true;
+            return;
+        }
+
+        var fitnessPlan = await FitnessPlanService.GetFitnessPlan(Id);
         if (fitnessPlan == null)
         {
-            // FIXME: return 404
+            NotFound = true;
             return;
         }
 

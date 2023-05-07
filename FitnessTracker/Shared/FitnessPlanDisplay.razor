@@ -1,7 +1,11 @@
 ﻿@using FitnessTracker.Data
 @using System.Globalization
+@using Humanizer
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+@inject UserManager<FitnessTrackerUser> UserManager;
+@inject AuthenticationStateProvider AuthProvider;
+@inject FitnessPlanService FitnessPlanService;
 
 <div class="card">
     <NavLink href=@($"plans/{FitnessPlan.Id}")>
@@ -10,22 +14,48 @@
     <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
     <p>Intensity: @FitnessPlan.Intensity</p>
     <div class="list-group list-group-flush">
-        <EditForm EditContext="@_editContext">
+        @if (IsOwnPlan)
+        {
+            <EditForm EditContext="@_editContext">
+                @foreach (var item in FitnessPlan.WorkoutItems)
+                {
+                    <li class="list-group-item" style="display: flex; justify-content: space-between">
+                        <div>
+                            <b>@item.Title</b>
+                            <InputCheckbox @bind-Value="item.IsCompleted"/>
+                        </div>
+                        <div>
+                            @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.First())
+                            {
+                                <button @onclick="() => MoveItem(item, true)">Up</button>
+                            }
+                            @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.Last())
+                            {
+                                <button @onclick="() => MoveItem(item, false)">Down</button>
+                            }
+                            <button @onclick="() => DeleteItem(item)">Delete</button>
+                        </div>
+                    </li>
+                }
+            </EditForm>
+            <li class="list-group-item">
+                <EditForm Model="@_newItem" OnSubmit="@HandleItemSubmit">
+                    <InputText @bind-Value="@_newItem.Title"/>
+                    <InputCheckbox @bind-Value="@_newItem.IsCompleted"/>
+                    <button type="submit">Add</button>
+                </EditForm>
+            </li>
+        }
+        else
+        {
             @foreach (var item in FitnessPlan.WorkoutItems)
             {
                 <li class="list-group-item">
                     <b>@item.Title</b>
-                    <InputCheckbox @bind-Value="item.IsCompleted"/>
+                    <input type="checkbox" disabled="disabled" checked="@item.IsCompleted"/>
                 </li>
             }
-        </EditForm>
-        <li class="list-group-item">
-            <EditForm Model="@_newItem" OnSubmit="@HandleItemSubmit">
-                <InputText @bind-Value="@_newItem.Title"/>
-                <InputCheckbox @bind-Value="@_newItem.IsCompleted"/>
-                <button type="submit">Add</button>
-            </EditForm>
-        </li>
+        }
     </div>
 </div>
 
@@ -38,8 +68,15 @@
 
     private WorkoutItem _newItem = new();
 
-    protected override void OnInitialized()
+    private bool IsOwnPlan { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = UserManager.GetUserId(authState.User);
+        if (FitnessPlan.UserId == userId)
+            IsOwnPlan = true;
+
         _editContext = new EditContext(FitnessPlan);
         _editContext.OnFieldChanged += OnFitnessPlanFieldChanged;
     }
@@ -49,26 +86,27 @@
         if (e.FieldIdentifier.FieldName != "IsCompleted" || e.FieldIdentifier.Model is not WorkoutItem item)
             return;
 
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        context.WorkoutItems.Update(item);
-        await context.SaveChangesAsync();
+        await FitnessPlanService.UpdateWorkoutItem(item);
     }
 
     private async Task HandleItemSubmit()
     {
-        _newItem.FitnessPlanId = FitnessPlan.Id!;
+        await FitnessPlanService.AddWorkoutItemToPlan(FitnessPlan, _newItem);
+        _newItem = new WorkoutItem();
+        StateHasChanged();
+    }
 
-        var lastItem = FitnessPlan.WorkoutItems.LastOrDefault();
-        _newItem.Index = lastItem != null ? lastItem.Index + 1 : 0;
+    private async Task MoveItem(WorkoutItem item, bool moveUp)
+    {
+        await FitnessPlanService.MoveWorkoutItem(FitnessPlan, item, moveUp);
+        FitnessPlan.WorkoutItems = FitnessPlan.WorkoutItems.OrderBy(x => x.Index).ToList();
+        StateHasChanged();
+    }
 
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.WorkoutItems.Add(_newItem);
-            FitnessPlan.WorkoutItems.Add(_newItem);
-
-            _newItem = new WorkoutItem();
-            await context.SaveChangesAsync();
-        }
+    private async Task DeleteItem(WorkoutItem item)
+    {
+        await FitnessPlanService.RemoveWorkoutItem(item);
+        FitnessPlan.WorkoutItems.Remove(item);
         StateHasChanged();
     }
 

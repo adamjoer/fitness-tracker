@@ -20,6 +20,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services
     .AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<FitnessTrackerUser>>();
+builder.Services.AddScoped<FitnessPlanService>();
 
 var app = builder.Build();
 

@@ -3,10 +3,9 @@
 
 @using FitnessTracker.Data
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.EntityFrameworkCore
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
-@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+@inject FitnessPlanService FitnessPlanService;
 
 <PageTitle>Fitness Plans | FitnessTracker</PageTitle>
 
@@ -49,16 +48,12 @@ else
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         _submitFitnessPlan.UserId = UserManager.GetUserId(authState.User);
 
-        await using (var context = await ContextFactory.CreateDbContextAsync())
+        await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
+        _submitFitnessPlan = new FitnessPlan
         {
-            context.FitnessPlans.Add(_submitFitnessPlan);
-            _submitFitnessPlan = new FitnessPlan
-            {
-                Date = DateTime.Today
-            };
+            Date = DateTime.Today
+        };
 
-            await context.SaveChangesAsync();
-        }
         await LoadFitnessPlans();
     }
 
@@ -66,12 +61,7 @@ else
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userId = UserManager.GetUserId(authState.User);
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-            FitnessPlans = await context.FitnessPlans
-                .Include(plan => plan.WorkoutItems
-                    .OrderBy(item => item.Index))
-                .Where(plan => plan.UserId == userId)
-                .ToListAsync();
+        FitnessPlans = await FitnessPlanService.GetUsersFitnessPlans(userId);
         StateHasChanged();
     }
 
