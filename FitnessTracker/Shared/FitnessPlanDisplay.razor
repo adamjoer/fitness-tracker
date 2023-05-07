@@ -5,7 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
-@inject IDbContextFactory<FitnessTrackerContext> ContextFactory;
+@inject FitnessPlanService FitnessPlanService;
 
 <div class="card">
     <NavLink href=@($"plans/{FitnessPlan.Id}")>
@@ -86,62 +86,26 @@
         if (e.FieldIdentifier.FieldName != "IsCompleted" || e.FieldIdentifier.Model is not WorkoutItem item)
             return;
 
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        context.WorkoutItems.Update(item);
-        await context.SaveChangesAsync();
+        await FitnessPlanService.UpdateWorkoutItem(item);
     }
 
     private async Task HandleItemSubmit()
     {
-        _newItem.FitnessPlanId = FitnessPlan.Id!;
-
-        var lastItem = FitnessPlan.WorkoutItems.LastOrDefault();
-        _newItem.Index = lastItem != null ? lastItem.Index + 1 : 0;
-
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.WorkoutItems.Add(_newItem);
-            FitnessPlan.WorkoutItems.Add(_newItem);
-
-            _newItem = new WorkoutItem();
-            await context.SaveChangesAsync();
-        }
+        await FitnessPlanService.AddWorkoutItemToPlan(FitnessPlan, _newItem);
+        _newItem = new WorkoutItem();
         StateHasChanged();
     }
 
     private async Task MoveItem(WorkoutItem item, bool moveUp)
     {
-        if (FitnessPlan.WorkoutItems.Count <= 1)
-            return;
-
-        var otherMovingItem = moveUp
-            ? FitnessPlan.WorkoutItems.TakeWhile(x => x.Index != item.Index).LastOrDefault()
-            : FitnessPlan.WorkoutItems.SkipWhile(x => x.Index != item.Index).Skip(1).FirstOrDefault();
-
-        if (otherMovingItem == null)
-            return;
-
-        (item.Index, otherMovingItem.Index) = (otherMovingItem.Index, item.Index);
-
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.WorkoutItems.Update(item);
-            context.WorkoutItems.Update(otherMovingItem);
-            await context.SaveChangesAsync();
-        }
-
+        await FitnessPlanService.MoveWorkoutItem(FitnessPlan, item, moveUp);
         FitnessPlan.WorkoutItems = FitnessPlan.WorkoutItems.OrderBy(x => x.Index).ToList();
         StateHasChanged();
     }
 
     private async Task DeleteItem(WorkoutItem item)
     {
-        await using (var context = await ContextFactory.CreateDbContextAsync())
-        {
-            context.WorkoutItems.Remove(item);
-            await context.SaveChangesAsync();
-        }
-
+        await FitnessPlanService.RemoveWorkoutItem(item);
         FitnessPlan.WorkoutItems.Remove(item);
         StateHasChanged();
     }
