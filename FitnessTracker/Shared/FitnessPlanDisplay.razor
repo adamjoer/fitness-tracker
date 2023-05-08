@@ -14,7 +14,7 @@
     <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
     <p>Intensity: @FitnessPlan.Intensity</p>
     <div class="list-group list-group-flush">
-        @if (IsOwnPlan)
+        @if (_isOwnPlan)
         {
             <EditForm EditContext="@_editContext">
                 @foreach (var item in FitnessPlan.WorkoutItems)
@@ -68,14 +68,14 @@
 
     private WorkoutItem _newItem = new();
 
-    private bool IsOwnPlan { get; set; }
+    private bool _isOwnPlan;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userId = UserManager.GetUserId(authState.User);
         if (FitnessPlan.UserId == userId)
-            IsOwnPlan = true;
+            _isOwnPlan = true;
 
         _editContext = new EditContext(FitnessPlan);
         _editContext.OnFieldChanged += OnFitnessPlanFieldChanged;
