@@ -112,11 +112,10 @@
     cursor: pointer;
 }
 
-.search-result.disabled {
+.search-result.add-new-type {
     background-color: lightgrey;
-    cursor: not-allowed;
 }
 
-.search-result.disabled:hover {
-    background: lightgrey;
+.search-result.add-new-type:hover {
+    color: black;
 }

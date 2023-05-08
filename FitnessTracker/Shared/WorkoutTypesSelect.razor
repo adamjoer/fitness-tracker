@@ -1,4 +1,5 @@
 ﻿@using FitnessTracker.Data
+@using System.Text.RegularExpressions
 @inject FitnessInterestService FitnessInterestService;
 
 @*
@@ -22,18 +23,18 @@ shamelessly stolen from:
             @if (_searchResults is not null)
             {
                 <ul class="search-results">
-                    @if (_searchResults.Any())
+                    @foreach (var type in _searchResults)
                     {
-                        @foreach (var type in _searchResults)
-                        {
-                            <li class="search-result" @onclick="() => AddWorkoutType(type)">
-                                <span class="search-result-text">@type.Name</span>
-                            </li>
-                        }
+                        <li class="search-result" @onclick="() => AddWorkoutType(type)">
+                            <span class="search-result-text">@type.Name</span>
+                        </li>
                     }
-                    else
+
+                    @if (_canAddNewType)
                     {
-                        <li class="disabled search-result">No results</li>
+                        <li class="search-result add-new-type" @onclick="() => SubmitWorkoutType(_searchQuery)">
+                            <span class="search-result-text">Add new workout type <em>@_searchQuery.ToLowerInvariant()</em></span>
+                        </li>
                     }
                 </ul>
             }
@@ -53,13 +54,22 @@ shamelessly stolen from:
 
     private List<WorkoutType>? _searchResults;
 
+    private bool _canAddNewType = false;
+
     async Task HandleInput(ChangeEventArgs e)
     {
-        var searchQuery = e.Value?.ToString();
-        if (searchQuery != null && searchQuery.Any())
-            _searchResults = await FitnessInterestService.SearchForWorkoutType(searchQuery, WorkoutTypes);
+        _searchQuery = e.Value?.ToString() ?? string.Empty;
+        if (_searchQuery.Any() && Regex.IsMatch(_searchQuery, @"^[a-zA-Z0-9-_]{1,256}$"))
+        {
+            _searchResults = await FitnessInterestService.SearchForWorkoutType(_searchQuery, WorkoutTypes);
+            _canAddNewType = (_searchResults.Any() && !_searchResults.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase))) ||
+                             (!_searchResults.Any() && !WorkoutTypes.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase)));
+        }
         else
+        {
             _searchResults = null;
+            _canAddNewType = false;
+        }
     }
 
     private async Task AddWorkoutType(WorkoutType type)
@@ -69,6 +79,15 @@ shamelessly stolen from:
 
         WorkoutTypes.Add(type);
         await WorkoutTypesChanged.InvokeAsync(WorkoutTypes);
+    }
+
+    private async Task SubmitWorkoutType(string name)
+    {
+        await AddWorkoutType(new WorkoutType
+        {
+            Id = null,
+            Name = name.ToLowerInvariant()
+        });
     }
 
     private async Task DeleteWorkoutType(WorkoutType value)

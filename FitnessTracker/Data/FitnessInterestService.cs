@@ -71,11 +71,12 @@ public class FitnessInterestService
         });
     }
 
-    public async Task AddWorkoutType(WorkoutType type)
+    public async Task<WorkoutType> AddWorkoutType(WorkoutType type)
     {
         type.Name = type.Name.ToLowerInvariant();
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.WorkoutTypes.Add(type);
+        var newWorkoutType = context.WorkoutTypes.Add(type);
         await context.SaveChangesAsync();
+        return newWorkoutType.Entity;
     }
 }
