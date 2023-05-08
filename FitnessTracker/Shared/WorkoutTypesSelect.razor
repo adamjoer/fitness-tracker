@@ -1,62 +1,80 @@
 ﻿@using FitnessTracker.Data
 @inject FitnessInterestService FitnessInterestService;
-@inject ILogger<WorkoutTypesSelect> Logger;
 
-<div class="autocomplete w-25">
-    <input @bind="SearchQuery" @oninput="HandleInput" class="form-control filter"/>
-    @if (_workoutTypes is not null)
-    {
-        <ul class="options">
-            @if (_workoutTypes.Any())
+@*
+This is a combination of two implementations of autocomplete and tag input
+shamelessly stolen from:
+1. https://stackoverflow.com/a/65748719/18713517
+2. https://www.mikesdotnetting.com/article/362/simple-autocomplete-for-blazor
+*@
+
+<div class="wrapper">
+    <div class="types-input">
+        @foreach (var type in WorkoutTypes)
+        {
+            <span class="type">
+                @type.Name <span class="type-remove" @onclick="() => DeleteWorkoutType(type)"></span>
+            </span>
+        }
+
+        <div>
+            <input placeholder="Add workout types" @bind="_searchQuery" @oninput="HandleInput" class="form-control filter" autocomplete="off"/>
+            @if (_searchResults is not null)
             {
-                @foreach (var type in _workoutTypes)
-                {
-                    <li class="option" @onclick="() => SelectWorkoutType(type)">
-                        <span class="option-text">@type.Name</span>
-                    </li>
-                }
+                <ul class="search-results">
+                    @if (_searchResults.Any())
+                    {
+                        @foreach (var type in _searchResults)
+                        {
+                            <li class="search-result" @onclick="() => AddWorkoutType(type)">
+                                <span class="search-result-text">@type.Name</span>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="disabled search-result">No results</li>
+                    }
+                </ul>
             }
-            else
-            {
-                <li class="disabled option">No results</li>
-            }
-        </ul>
-    }
+        </div>
+    </div>
 </div>
 
 @code {
 
     [Parameter, EditorRequired]
-    public WorkoutType WorkoutType { get; set; }
+    public List<WorkoutType> WorkoutTypes { get; set; } = null!;
 
     [Parameter]
-    public EventCallback<WorkoutType> WorkoutTypeChanged { get; set; } 
+    public EventCallback<List<WorkoutType>> WorkoutTypesChanged { get; set; }
 
-    private string SearchQuery { get; set; }
-    
-    private List<WorkoutType>? _workoutTypes;
+    private string _searchQuery = string.Empty;
+
+    private List<WorkoutType>? _searchResults;
 
     async Task HandleInput(ChangeEventArgs e)
     {
         var searchQuery = e.Value?.ToString();
         if (searchQuery != null && searchQuery.Any())
-        {
-            _workoutTypes = await FitnessInterestService.SearchForWorkoutType(searchQuery);
-        }
+            _searchResults = await FitnessInterestService.SearchForWorkoutType(searchQuery, WorkoutTypes);
         else
-        {
-            _workoutTypes = null;
-        }
+            _searchResults = null;
     }
 
-    private async Task SelectWorkoutType(WorkoutType type)
+    private async Task AddWorkoutType(WorkoutType type)
     {
-        Logger.LogInformation($"Selecting workout type with name \"{type.Name}\" and id \"{type.Id}\"");
+        _searchResults = null;
+        _searchQuery = string.Empty;
 
-        _workoutTypes = null;
-        SearchQuery = string.Empty;
-        
-        await WorkoutTypeChanged.InvokeAsync(type);
+        WorkoutTypes.Add(type);
+        await WorkoutTypesChanged.InvokeAsync(WorkoutTypes);
+    }
+
+    private async Task DeleteWorkoutType(WorkoutType value)
+    {
+        WorkoutTypes.Remove(value);
+        await WorkoutTypesChanged.InvokeAsync(WorkoutTypes);
     }
 
 }

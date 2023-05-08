@@ -1,40 +1,122 @@
-﻿.autocomplete {
+﻿.wrapper {
     position: relative;
 }
 
-.autocomplete .options {
-    position: absolute;
-    top: 40px;
-    left: 0;
+.types-input, .types-input * {
+    box-sizing: border-box
+}
+
+.types-input {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
     background: white;
+    color: #556270;
+    padding: 5px 5px 0;
+    border: 1px solid #e6e6e6;
+    border-radius: 2px
+}
+
+.types-input .type {
+    position: relative;
+    background: lightgray;
+    display: block;
+    max-width: 100%;
+    word-wrap: break-word;
+    padding: 5px 30px 5px 5px;
+    border-radius: 2px;
+    margin: 0 5px 5px 0
+}
+
+.types-input .type .type-remove {
+    position: absolute;
+    background: 0 0;
+    display: block;
+    width: 30px;
+    height: 30px;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    color: #ff6b6b;
+    line-height: 30px;
+    padding: 0;
+    border: 0
+}
+
+.types-input .type .type-remove:after, .types-input .type .type-remove:before {
+    background: #ff6b6b;
+    position: absolute;
+    display: block;
+    width: 10px;
+    height: 2px;
+    top: 14px;
+    left: 10px;
+    content: ''
+}
+
+.types-input .type .type-remove:before {
+    transform: rotateZ(45deg)
+}
+
+.types-input .type .type-remove:after {
+    transform: rotateZ(-45deg)
+}
+
+.types-input div {
+    position: relative;
+    -webkit-box-flex: 1;
+    -webkit-flex-grow: 1;
+    -ms-flex-positive: 1;
+    flex-grow: 1
+}
+
+.types-input div input {
+    background: 0 0;
+    display: block;
+    padding: 5px;
+    border: 0;
+    margin: 0 5px 5px 0
+}
+
+.search-results {
+    position: absolute;
+    background: white;
+    box-sizing: content-box;
     width: 100%;
     padding: 0;
     z-index: 10;
     border: 1px solid #ced4da;
-    border-radius: 0.5rem;
+    border-radius: 0.25rem;
     box-shadow: 0 30px 25px 8px rgba(0, 0, 0, 0.1);
 }
 
-.autocomplete .option {
+.search-result {
     display: block;
     padding: 0.25rem;
 }
 
-.autocomplete .option .option-text {
+.search-result .search-result-text {
     padding: 0.25rem 0.5rem;
 }
 
-.autocomplete .option:hover {
+.search-result:hover {
     background: #1E90FF;
-    color: #fff;
+    color: white;
+    border-radius: inherit;
     cursor: pointer;
 }
 
-.autocomplete .option.disabled {
+.search-result.disabled {
     background-color: lightgrey;
     cursor: not-allowed;
 }
 
-.autocomplete .option.disabled:hover {
+.search-result.disabled:hover {
     background: lightgrey;
 }
