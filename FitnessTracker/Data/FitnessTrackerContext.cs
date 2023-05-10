@@ -17,5 +17,7 @@ namespace FitnessTracker.Data
         public DbSet<WorkoutType> WorkoutTypes { get; set; } = null!;
 
         public DbSet<FitnessInterest> FitnessInterests { get; set; } = null!;
+
+        public DbSet<WorkoutTypeTag> WorkoutTypeTags { get; set; } = null!;
     }
 }

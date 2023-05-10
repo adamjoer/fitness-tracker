@@ -4,6 +4,7 @@ using FitnessTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitnessTracker.Data.Migrations
 {
     [DbContext(typeof(FitnessTrackerContext))]
-    partial class FitnessTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20230510184428_AddWorkoutTypeTags")]
+    partial class AddWorkoutTypeTags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -398,7 +400,7 @@ namespace FitnessTracker.Data.Migrations
 
             modelBuilder.Entity("FitnessTracker.Data.WorkoutTypeTag", b =>
                 {
-                    b.HasOne("FitnessTracker.Data.FitnessPlan", "Plan")
+                    b.HasOne("FitnessTracker.Data.FitnessPlan", "plan")
                         .WithMany("WorkoutTypeTags")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -412,7 +414,7 @@ namespace FitnessTracker.Data.Migrations
 
                     b.Navigation("Type");
 
-                    b.Navigation("Plan");
+                    b.Navigation("plan");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

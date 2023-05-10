@@ -13,7 +13,7 @@
     </NavLink>
     <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
     <p>Intensity: @FitnessPlan.Intensity</p>
-    <div class="list-group list-group-flush">
+    <ul class="list-group list-group-flush">
         @if (_isOwnPlan)
         {
             <EditForm EditContext="@_editContext">
@@ -56,7 +56,16 @@
                 </li>
             }
         }
-    </div>
+    </ul>
+    @if (FitnessPlan.WorkoutTypeTags.Any())
+    {
+        <div class="card-footer">
+            @foreach (var tag in FitnessPlan.WorkoutTypeTags)
+            {
+                <span>@tag.Type.Name&nbsp;</span>
+            }
+        </div>
+    }
 </div>
 
 @code {

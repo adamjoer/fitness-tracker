@@ -15,6 +15,7 @@
     <InputText @bind-Value="_submitFitnessPlan.Title"/>
     <InputDate @bind-Value="_submitFitnessPlan.Date"/>
     <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
+    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
     <button type="submit">Submit</button>
 </EditForm>
 
@@ -41,6 +42,8 @@ else
         Date = DateTime.Today
     };
 
+    private List<WorkoutType> _workoutTypes = new();
+    
     private List<FitnessPlan>? FitnessPlans { get; set; }
 
     private async void HandleSubmit()
@@ -48,11 +51,15 @@ else
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         _submitFitnessPlan.UserId = UserManager.GetUserId(authState.User);
 
-        await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
+        var fitnessPlan = await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
+        if (_workoutTypes.Any())
+            await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, _workoutTypes.Where(type => type.Id != null));
+
         _submitFitnessPlan = new FitnessPlan
         {
             Date = DateTime.Today
         };
+        _workoutTypes = new List<WorkoutType>();
 
         await LoadFitnessPlans();
     }

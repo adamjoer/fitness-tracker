@@ -27,6 +27,8 @@ public class FitnessPlanService
             return await context.FitnessPlans
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
+                .Include(plan => plan.WorkoutTypeTags)
+                .ThenInclude(tag => tag.Type)
                 .Where(plan => plan.UserId == userId)
                 .ToListAsync();
         });
@@ -45,6 +47,8 @@ public class FitnessPlanService
             return await context.FitnessPlans
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
+                .Include(plan => plan.WorkoutTypeTags)
+                .ThenInclude(tag => tag.Type)
                 .FirstOrDefaultAsync(plan => plan.Id == fitnessPlanId);
         });
     }
@@ -103,6 +107,18 @@ public class FitnessPlanService
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
         context.WorkoutItems.Remove(item);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task AddWorkoutTypeTagsToPlan(FitnessPlan plan, IEnumerable<WorkoutType> workoutTypes)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        var workoutTypeTags = workoutTypes.Select(type => new WorkoutTypeTag
+        {
+            TypeId = type.Id!,
+            PlanId = plan.Id!
+        });
+        context.WorkoutTypeTags.AddRange(workoutTypeTags);
         await context.SaveChangesAsync();
     }
 }

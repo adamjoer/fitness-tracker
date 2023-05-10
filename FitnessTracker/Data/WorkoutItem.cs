@@ -21,6 +21,4 @@ public class WorkoutItem
     public string FitnessPlanId { get; set; } = string.Empty;
 
     public FitnessPlan FitnessPlan { get; set; } = null!;
-
-    // public WorkoutType WorkoutType { get; set; }
 }

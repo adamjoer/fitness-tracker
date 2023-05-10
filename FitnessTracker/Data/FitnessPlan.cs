@@ -8,6 +8,7 @@ public class FitnessPlan
     public FitnessPlan()
     {
         WorkoutItems = new HashSet<WorkoutItem>();
+        WorkoutTypeTags = new HashSet<WorkoutTypeTag>();
     }
 
     [Key]
@@ -30,4 +31,6 @@ public class FitnessPlan
     public virtual FitnessTrackerUser User { get; set; } = null!;
 
     public virtual ICollection<WorkoutItem> WorkoutItems { get; set; }
+
+    public virtual ICollection<WorkoutTypeTag> WorkoutTypeTags { get; set; }
 }
