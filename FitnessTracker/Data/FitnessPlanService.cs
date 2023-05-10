@@ -30,6 +30,7 @@ public class FitnessPlanService
                 .Include(plan => plan.WorkoutTypeTags)
                 .ThenInclude(tag => tag.Type)
                 .Where(plan => plan.UserId == userId)
+                .AsSplitQuery()
                 .ToListAsync();
         });
     }
@@ -49,6 +50,7 @@ public class FitnessPlanService
                     .OrderBy(item => item.Index))
                 .Include(plan => plan.WorkoutTypeTags)
                 .ThenInclude(tag => tag.Type)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(plan => plan.Id == fitnessPlanId);
         });
     }
