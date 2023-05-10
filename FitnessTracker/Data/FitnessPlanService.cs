@@ -49,11 +49,12 @@ public class FitnessPlanService
         });
     }
 
-    public async Task AddFitnessPlan(FitnessPlan plan)
+    public async Task<FitnessPlan> AddFitnessPlan(FitnessPlan plan)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.FitnessPlans.Add(plan);
+        var newFitnessPlan = context.FitnessPlans.Add(plan);
         await context.SaveChangesAsync();
+        return newFitnessPlan.Entity;
     }
 
     public async Task AddWorkoutItemToPlan(FitnessPlan plan, WorkoutItem item)
@@ -87,7 +88,6 @@ public class FitnessPlanService
         var otherMovingItem = moveUp
             ? plan.WorkoutItems.TakeWhile(x => x.Index != item.Index).LastOrDefault()
             : plan.WorkoutItems.SkipWhile(x => x.Index != item.Index).Skip(1).FirstOrDefault();
-
         if (otherMovingItem == null)
             return;
 
