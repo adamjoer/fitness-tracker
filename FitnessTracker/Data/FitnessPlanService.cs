@@ -5,8 +5,8 @@ namespace FitnessTracker.Data;
 
 public class FitnessPlanService
 {
-    private IMemoryCache MemoryCache { get; }
     private readonly IDbContextFactory<FitnessTrackerContext> _dbContextFactory;
+    private IMemoryCache MemoryCache { get; }
 
     public FitnessPlanService(IDbContextFactory<FitnessTrackerContext> dbContextFactory, IMemoryCache memoryCache)
     {
@@ -16,7 +16,7 @@ public class FitnessPlanService
 
     public Task<List<FitnessPlan>> GetUsersFitnessPlans(string userId)
     {
-        return MemoryCache.GetOrCreateAsync(userId, async e =>
+        return MemoryCache.GetOrCreateAsync($"{typeof(List<FitnessPlan>)}{userId}", async e =>
         {
             e.SetOptions(new MemoryCacheEntryOptions
             {
@@ -34,7 +34,7 @@ public class FitnessPlanService
 
     public Task<FitnessPlan?> GetFitnessPlan(string fitnessPlanId)
     {
-        return MemoryCache.GetOrCreateAsync(fitnessPlanId, async e =>
+        return MemoryCache.GetOrCreateAsync($"{typeof(FitnessPlan)}{fitnessPlanId}", async e =>
         {
             e.SetOptions(new MemoryCacheEntryOptions
             {

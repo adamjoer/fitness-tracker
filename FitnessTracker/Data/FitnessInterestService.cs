@@ -16,7 +16,7 @@ public class FitnessInterestService
 
     public Task<List<FitnessInterest>> GetUserInterests(string userId)
     {
-        return MemoryCache.GetOrCreateAsync(userId, async e =>
+        return MemoryCache.GetOrCreateAsync($"{typeof(List<FitnessInterest>)}{userId}", async e =>
         {
             e.SetOptions(new MemoryCacheEntryOptions
             {
