@@ -4,7 +4,7 @@
 
 .top-row {
     height: 3.5rem;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--dark);
 }
 
 .navbar-brand {
@@ -28,7 +28,7 @@
 }
 
 ::deep .nav-item :is(a, button) {
-    color: #d7d7d7;
+    color: white;
     border-radius: 4px;
     min-height: 3rem;
     display: flex;
@@ -37,13 +37,13 @@
 }
 
 ::deep .nav-item a.active {
-    background-color: rgba(255, 255, 255, 0.25);
+    background-color: var(--secondary);
     color: white;
 }
 
 ::deep .nav-item a:hover,
 ::deep .nav-item button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: color-mix(in srgb, var(--secondary), transparent 50%);
     color: white;
 }
 
