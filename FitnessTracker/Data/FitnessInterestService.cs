@@ -45,8 +45,7 @@ public class FitnessInterestService
         await context.SaveChangesAsync();
     }
 
-    public Task<List<WorkoutType>> SearchForWorkoutType(string searchQuery,
-        List<WorkoutType>? exclusionList = null)
+    public Task<List<WorkoutType>> SearchForWorkoutType(string searchQuery)
     {
         var lowerCaseSearchQuery = searchQuery.ToLowerInvariant();
 
@@ -58,13 +57,6 @@ public class FitnessInterestService
             });
 
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            if (exclusionList != null)
-                return await context.WorkoutTypes
-                    .Where(type => !exclusionList.Contains(type))
-                    .Where(type => type.Name.Contains(lowerCaseSearchQuery))
-                    .ToListAsync();
-
             return await context.WorkoutTypes
                 .Where(type => type.Name.Contains(lowerCaseSearchQuery))
                 .ToListAsync();
