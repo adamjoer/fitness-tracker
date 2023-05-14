@@ -85,7 +85,14 @@ public class FitnessPlanService
     public async Task UpdateWorkoutItem(WorkoutItem item)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.WorkoutItems.Update(item);
+        context.WorkoutItems.Update(new WorkoutItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Index = item.Index,
+            IsCompleted = item.IsCompleted,
+            FitnessPlanId = item.FitnessPlanId,
+        });
         await context.SaveChangesAsync();
     }
 
@@ -103,8 +110,22 @@ public class FitnessPlanService
         (item.Index, otherMovingItem.Index) = (otherMovingItem.Index, item.Index);
 
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.WorkoutItems.Update(item);
-        context.WorkoutItems.Update(otherMovingItem);
+        context.WorkoutItems.Update(new WorkoutItem
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Index = item.Index,
+            IsCompleted = item.IsCompleted,
+            FitnessPlanId = item.FitnessPlanId,
+        });
+        context.WorkoutItems.Update(new WorkoutItem
+        {
+            Id = otherMovingItem.Id,
+            Title = otherMovingItem.Title,
+            Index = otherMovingItem.Index,
+            IsCompleted = otherMovingItem.IsCompleted,
+            FitnessPlanId = otherMovingItem.FitnessPlanId,
+        });
         await context.SaveChangesAsync();
     }
 
