@@ -21,16 +21,16 @@
             </ModalHeader>
             <ModalBody>
                 <label for="fitness-plan-title-input" class="form-label">Title</label>
-                <InputText @bind-Value="_submitFitnessPlan.Title" id="fitness-plan-title-input" class="form-control"/>
+                <InputText placeholder="Title" @bind-Value="_submitFitnessPlan.Title" id="fitness-plan-title-input" class="form-control"/>
 
                 <label for="fitness-plan-date-input" class="form-label">Date</label>
                 <InputDate @bind-Value="_submitFitnessPlan.Date" id="fitness-plan-date-input" class="form-control"/>
-                
-                <label for="fitness-plan-tags-input">Workout types</label>
-                <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes" id="fitness-plan-tags-input" class="form-control"/>
 
-                <label for="fitness-plan-intensity-input">Intensity</label>
-                <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
+                <label for="fitness-plan-tags-input" class="form-label">Workout types</label>
+                <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
+
+                <label for="fitness-plan-intensity-input" class="form-label">Intensity</label>
+                <InputNumber @bind-Value="_submitFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
             </ModalBody>
             <ModalFooter>
                 <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
