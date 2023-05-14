@@ -115,12 +115,13 @@ public class FitnessPlanService
 
     public async Task AddWorkoutTypeTagsToPlan(FitnessPlan plan, IEnumerable<WorkoutType> workoutTypes)
     {
-        await using var context = await _dbContextFactory.CreateDbContextAsync();
         var workoutTypeTags = workoutTypes.Select(type => new WorkoutTypeTag
         {
             TypeId = type.Id!,
             PlanId = plan.Id!
         });
+
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
         context.WorkoutTypeTags.AddRange(workoutTypeTags);
         await context.SaveChangesAsync();
     }

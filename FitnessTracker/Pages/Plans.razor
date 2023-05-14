@@ -6,6 +6,7 @@
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
+@inject FitnessInterestService FitnessInterestService;
 
 <PageTitle>Fitness Plans | FitnessTracker</PageTitle>
 
@@ -86,7 +87,17 @@ else
 
         var fitnessPlan = await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
         if (_workoutTypes.Any())
-            await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, _workoutTypes.Where(type => type.Id != null));
+        {
+            var newWorkoutTypes = _workoutTypes.Where(type => type.Id == null).ToList();
+            _workoutTypes.RemoveAll(type => type.Id == null);
+            await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, _workoutTypes);
+
+            if (newWorkoutTypes.Any())
+            {
+                var addedWorkoutTypes = await FitnessInterestService.AddWorkoutTypes(newWorkoutTypes);
+                await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, addedWorkoutTypes);
+            }
+        }
 
         _submitFitnessPlan = new FitnessPlan
         {

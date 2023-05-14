@@ -71,4 +71,25 @@ public class FitnessInterestService
         await context.SaveChangesAsync();
         return newWorkoutType.Entity;
     }
+
+    public async Task<IEnumerable<WorkoutType>> AddWorkoutTypes(IEnumerable<WorkoutType> types)
+    {
+        var lowerCaseTypes = types.Select(type => new WorkoutType()
+        {
+            Name = type.Name.ToLowerInvariant()
+        }).ToList();
+
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        // FIXME: This is a pretty inefficient way to check for already added workout types.
+        //        However, EF can't translate `.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name))`
+        //        to a database operation, so for now we just query for all types, and check against that list.
+        var alreadyExistingTypes = await context.WorkoutTypes.ToListAsync();
+        var duplicateTypes = alreadyExistingTypes.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name)).ToList();
+        lowerCaseTypes.RemoveAll(type => duplicateTypes.Any(x => x.Name == type.Name));
+
+        context.AddRange(lowerCaseTypes);
+        await context.SaveChangesAsync();
+        return lowerCaseTypes.Concat(duplicateTypes);
+    }
 }
