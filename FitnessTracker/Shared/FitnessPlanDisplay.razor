@@ -31,7 +31,6 @@
                     <InputNumber @bind-Value="_editFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
                 </ModalBody>
                 <ModalFooter>
-                    <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
                     <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
                 </ModalFooter>
             </EditForm>
@@ -136,11 +135,6 @@
         return modalRef.Show();
     }
 
-    private Task HideModal()
-    {
-        return modalRef.Hide();
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
@@ -221,7 +215,7 @@
             StateHasChanged();
         }
 
-        await HideModal();
+        await modalRef.Hide();
     }
 
 }

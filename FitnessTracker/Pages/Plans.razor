@@ -34,7 +34,6 @@
                 <InputNumber @bind-Value="_submitFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
             </ModalBody>
             <ModalFooter>
-                <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
                 <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
             </ModalFooter>
         </EditForm>
@@ -75,11 +74,6 @@ else
         return modalRef.Show();
     }
 
-    private Task HideModal()
-    {
-        return modalRef.Hide();
-    }
-
     private async void HandleSubmit()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
@@ -105,7 +99,7 @@ else
         };
         _workoutTypes = new List<WorkoutType>();
 
-        await HideModal();
+        await modalRef.Hide();
 
         await LoadFitnessPlans();
     }
