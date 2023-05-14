@@ -10,14 +10,35 @@
 <PageTitle>Fitness Plans | FitnessTracker</PageTitle>
 
 <h1>Fitness Plans</h1>
+<Button Color="Color.Primary" Clicked="@ShowModal">Add Fitness Plan</Button>
 
-<EditForm Model="@_submitFitnessPlan" OnSubmit="@HandleSubmit">
-    <InputText @bind-Value="_submitFitnessPlan.Title"/>
-    <InputDate @bind-Value="_submitFitnessPlan.Date"/>
-    <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
-    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
-    <button type="submit">Submit</button>
-</EditForm>
+<Modal @ref="modalRef">
+    <ModalContent Centered>
+        <EditForm Model="@_submitFitnessPlan" OnSubmit="@HandleSubmit">
+            <ModalHeader>
+                <ModalTitle>Add Fitness Plan</ModalTitle>
+                <CloseButton/>
+            </ModalHeader>
+            <ModalBody>
+                <label for="fitness-plan-title-input" class="form-label">Title</label>
+                <InputText @bind-Value="_submitFitnessPlan.Title" id="fitness-plan-title-input" class="form-control"/>
+
+                <label for="fitness-plan-date-input" class="form-label">Date</label>
+                <InputDate @bind-Value="_submitFitnessPlan.Date" id="fitness-plan-date-input" class="form-control"/>
+                
+                <label for="fitness-plan-tags-input">Workout types</label>
+                <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes" id="fitness-plan-tags-input" class="form-control"/>
+
+                <label for="fitness-plan-intensity-input">Intensity</label>
+                <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
+                <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
+            </ModalFooter>
+        </EditForm>
+    </ModalContent>
+</Modal>
 
 @if (FitnessPlans == null)
 {
@@ -43,8 +64,20 @@ else
     };
 
     private List<WorkoutType> _workoutTypes = new();
-    
+
     private List<FitnessPlan>? FitnessPlans { get; set; }
+
+    private Modal modalRef;
+
+    private Task ShowModal()
+    {
+        return modalRef.Show();
+    }
+
+    private Task HideModal()
+    {
+        return modalRef.Hide();
+    }
 
     private async void HandleSubmit()
     {
@@ -60,6 +93,8 @@ else
             Date = DateTime.Today
         };
         _workoutTypes = new List<WorkoutType>();
+
+        await HideModal();
 
         await LoadFitnessPlans();
     }
