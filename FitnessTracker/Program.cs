@@ -2,13 +2,28 @@ using FitnessTracker.Areas.Identity;
 using FitnessTracker.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+<<<<<<< Updated upstream
+=======
+using Blazorise;
+using Blazorise.Bootstrap5;
+using Blazorise.Icons.FontAwesome;
+using MySqlConnector;
+>>>>>>> Stashed changes
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContextFactory<FitnessTrackerContext>(options =>
-    options.UseSqlServer(connectionString));
+{
+    var connectionStringBuilder = new MySqlConnectionStringBuilder
+    {
+        ConnectionString = builder.Configuration.GetConnectionString("FitnessTracker"),
+        Password = builder.Configuration["FitnessTracker:RootPassword"]
+    };
+    options
+        .UseMySql(connectionStringBuilder.ConnectionString,
+            new MySqlServerVersion(builder.Configuration["MySqlVersion"]));
+});
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<FitnessTrackerUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<FitnessTrackerContext>();
