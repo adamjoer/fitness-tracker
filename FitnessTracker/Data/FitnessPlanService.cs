@@ -31,6 +31,7 @@ public class FitnessPlanService
                 .ThenInclude(tag => tag.Type)
                 .Where(plan => plan.UserId == userId)
                 .AsSplitQuery()
+                .OrderByDescending(plan => plan.Date)
                 .ToListAsync();
         });
     }
