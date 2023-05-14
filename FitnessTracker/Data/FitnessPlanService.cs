@@ -66,6 +66,13 @@ public class FitnessPlanService
         return newFitnessPlan.Entity;
     }
 
+    public async Task UpdateFitnessPlan(FitnessPlan plan)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessPlans.Update(plan);
+        await context.SaveChangesAsync();
+    }
+
     public async Task AddWorkoutItemToPlan(FitnessPlan plan, WorkoutItem item)
     {
         item.FitnessPlanId = plan.Id!;
@@ -129,6 +136,12 @@ public class FitnessPlanService
         await context.SaveChangesAsync();
     }
 
+    public async Task<List<WorkoutTypeTag>> GetWorkoutTypeTagsForPlan(FitnessPlan plan)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        return await context.WorkoutTypeTags.Where(tag => tag.PlanId == plan.Id).ToListAsync();
+    }
+
     public async Task RemoveWorkoutItem(WorkoutItem item)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
@@ -146,6 +159,20 @@ public class FitnessPlanService
 
         await using var context = await _dbContextFactory.CreateDbContextAsync();
         context.WorkoutTypeTags.AddRange(workoutTypeTags);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task RemoveWorkoutTypeTag(WorkoutTypeTag tag)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.WorkoutTypeTags.Remove(tag);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task RemoveWorkoutTypeTags(IEnumerable<WorkoutTypeTag> tags)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.WorkoutTypeTags.RemoveRange(tags);
         await context.SaveChangesAsync();
     }
 }
