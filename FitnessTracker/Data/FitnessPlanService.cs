@@ -73,6 +73,13 @@ public class FitnessPlanService
         await context.SaveChangesAsync();
     }
 
+    public async Task RemoveFitnessPlan(FitnessPlan plan)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessPlans.Remove(plan);
+        await context.SaveChangesAsync();
+    }
+
     public async Task AddWorkoutItemToPlan(FitnessPlan plan, WorkoutItem item)
     {
         item.FitnessPlanId = plan.Id!;

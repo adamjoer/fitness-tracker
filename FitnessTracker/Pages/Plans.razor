@@ -52,7 +52,7 @@ else
 {
     @foreach (var fitnessPlan in FitnessPlans)
     {
-        <FitnessPlanDisplay FitnessPlan="@fitnessPlan"/>
+        <FitnessPlanDisplay FitnessPlan="@fitnessPlan" OnDelete="HandleDelete"/>
     }
 }
 
@@ -102,6 +102,13 @@ else
         await modalRef.Hide();
 
         await LoadFitnessPlans();
+    }
+
+    private async void HandleDelete(FitnessPlan plan)
+    {
+        await FitnessPlanService.RemoveFitnessPlan(plan);
+        FitnessPlans?.Remove(plan);
+        StateHasChanged();
     }
 
     private async Task LoadFitnessPlans()

@@ -31,6 +31,7 @@
                     <InputNumber @bind-Value="_editFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
                 </ModalBody>
                 <ModalFooter>
+                    <Button Color="Color.Danger" Clicked="@HandleDelete">Delete</Button>
                     <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
                 </ModalFooter>
             </EditForm>
@@ -107,6 +108,9 @@
 
     [Parameter, EditorRequired]
     public FitnessPlan FitnessPlan { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<FitnessPlan> OnDelete { get; set; }
 
     private EditContext? _editContext;
 
@@ -216,6 +220,12 @@
         }
 
         await modalRef.Hide();
+    }
+
+    private async void HandleDelete()
+    {
+        await modalRef.Hide();
+        await OnDelete.InvokeAsync(FitnessPlan);
     }
 
 }

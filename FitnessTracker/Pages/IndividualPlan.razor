@@ -1,6 +1,8 @@
 ﻿@page "/plans/{id}"
 @attribute [Authorize]
 
+@inject NavigationManager NavigationManager
+
 <PageTitle>Fitness Plan | FitnessTracker</PageTitle>
 
 @using FitnessTracker.Data
@@ -20,7 +22,7 @@ else if (FitnessPlan == null)
 else
 {
     <PageTitle>@FitnessPlan.Title | FitnessTracker</PageTitle>
-    <FitnessPlanDisplay FitnessPlan="FitnessPlan"/>
+    <FitnessPlanDisplay FitnessPlan="FitnessPlan" OnDelete="HandleDelete"/>
 }
 
 @code {
@@ -55,4 +57,9 @@ else
         await LoadFitnessPlan();
     }
 
+    private async void HandleDelete(FitnessPlan plan)
+    {
+        await FitnessPlanService.RemoveFitnessPlan(plan);
+        NavigationManager.NavigateTo("plans");
+    }
 }
