@@ -27,7 +27,8 @@ public class FitnessPlanService
             return await context.FitnessPlans
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
-                .Include(plan => plan.WorkoutTypeTags)
+                .Include(plan => plan.WorkoutTypeTags
+                    .OrderBy(tag => tag.Type.Name))
                 .ThenInclude(tag => tag.Type)
                 .Where(plan => plan.UserId == userId)
                 .AsSplitQuery()
@@ -49,7 +50,8 @@ public class FitnessPlanService
             return await context.FitnessPlans
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
-                .Include(plan => plan.WorkoutTypeTags)
+                .Include(plan => plan.WorkoutTypeTags
+                    .OrderBy(tag => tag.Type.Name))
                 .ThenInclude(tag => tag.Type)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(plan => plan.Id == fitnessPlanId);
