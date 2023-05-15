@@ -25,6 +25,7 @@ public class FitnessPlanService
 
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.FitnessPlans
+                .Include(plan => plan.User)
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
                 .Include(plan => plan.WorkoutTypeTags
@@ -48,6 +49,7 @@ public class FitnessPlanService
 
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.FitnessPlans
+                .Include(plan => plan.User)
                 .Include(plan => plan.WorkoutItems
                     .OrderBy(item => item.Index))
                 .Include(plan => plan.WorkoutTypeTags
