@@ -6,18 +6,39 @@
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
+@inject FitnessInterestService FitnessInterestService;
 
 <PageTitle>Fitness Plans | FitnessTracker</PageTitle>
 
 <h1>Fitness Plans</h1>
+<Button Color="Color.Primary" Clicked="@ShowModal">Add Fitness Plan</Button>
 
-<EditForm Model="@_submitFitnessPlan" OnSubmit="@HandleSubmit">
-    <InputText @bind-Value="_submitFitnessPlan.Title"/>
-    <InputDate @bind-Value="_submitFitnessPlan.Date"/>
-    <InputNumber @bind-Value="_submitFitnessPlan.Intensity"/>
-    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
-    <button type="submit">Submit</button>
-</EditForm>
+<Modal @ref="modalRef">
+    <ModalContent Centered>
+        <EditForm Model="@_submitFitnessPlan" OnSubmit="@HandleSubmit">
+            <ModalHeader>
+                <ModalTitle>Add Fitness Plan</ModalTitle>
+                <CloseButton/>
+            </ModalHeader>
+            <ModalBody>
+                <label for="fitness-plan-title-input" class="form-label">Title</label>
+                <InputText placeholder="Title" @bind-Value="_submitFitnessPlan.Title" id="fitness-plan-title-input" class="form-control"/>
+
+                <label for="fitness-plan-date-input" class="form-label">Date</label>
+                <InputDate @bind-Value="_submitFitnessPlan.Date" id="fitness-plan-date-input" class="form-control"/>
+
+                <label class="form-label">Workout types</label>
+                <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
+
+                <label for="fitness-plan-intensity-input" class="form-label">Intensity</label>
+                <InputNumber @bind-Value="_submitFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
+            </ModalFooter>
+        </EditForm>
+    </ModalContent>
+</Modal>
 
 @if (FitnessPlans == null)
 {
@@ -31,7 +52,7 @@ else
 {
     @foreach (var fitnessPlan in FitnessPlans)
     {
-        <FitnessPlanDisplay FitnessPlan="@fitnessPlan"/>
+        <FitnessPlanDisplay FitnessPlan="@fitnessPlan" OnDelete="HandleDelete"/>
     }
 }
 
@@ -43,8 +64,15 @@ else
     };
 
     private List<WorkoutType> _workoutTypes = new();
-    
+
     private List<FitnessPlan>? FitnessPlans { get; set; }
+
+    private Modal modalRef;
+
+    private Task ShowModal()
+    {
+        return modalRef.Show();
+    }
 
     private async void HandleSubmit()
     {
@@ -53,7 +81,17 @@ else
 
         var fitnessPlan = await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
         if (_workoutTypes.Any())
-            await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, _workoutTypes.Where(type => type.Id != null));
+        {
+            var newWorkoutTypes = _workoutTypes.Where(type => type.Id == null).ToList();
+            _workoutTypes.RemoveAll(type => type.Id == null);
+            await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, _workoutTypes);
+
+            if (newWorkoutTypes.Any())
+            {
+                var addedWorkoutTypes = await FitnessInterestService.AddWorkoutTypes(newWorkoutTypes);
+                await FitnessPlanService.AddWorkoutTypeTagsToPlan(fitnessPlan, addedWorkoutTypes);
+            }
+        }
 
         _submitFitnessPlan = new FitnessPlan
         {
@@ -61,7 +99,16 @@ else
         };
         _workoutTypes = new List<WorkoutType>();
 
+        await modalRef.Hide();
+
         await LoadFitnessPlans();
+    }
+
+    private async void HandleDelete(FitnessPlan plan)
+    {
+        await FitnessPlanService.RemoveFitnessPlan(plan);
+        FitnessPlans?.Remove(plan);
+        StateHasChanged();
     }
 
     private async Task LoadFitnessPlans()

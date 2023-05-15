@@ -3,6 +3,9 @@ using FitnessTracker.Areas.Identity;
 using FitnessTracker.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Blazorise;
+using Blazorise.Bootstrap5;
+using Blazorise.Icons.FontAwesome;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +26,10 @@ builder.Services.AddDefaultIdentity<FitnessTrackerUser>(options => options.SignI
     .AddEntityFrameworkStores<FitnessTrackerContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services
+    .AddBlazorise(options => options.Immediate = true)
+    .AddBootstrap5Providers()
+    .AddFontAwesomeIcons();
 builder.Services
     .AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<FitnessTrackerUser>>();
 builder.Services.AddScoped<FitnessPlanService>();
