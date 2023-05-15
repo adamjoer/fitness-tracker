@@ -1,9 +1,9 @@
 ﻿@using FitnessTracker.Data
 @using System.Globalization
+@using System.Security.Claims
 @using Humanizer
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
 @inject FitnessInterestService FitnessInterestService;
@@ -180,8 +180,8 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = UserManager.GetUserId(authState.User);
-        if (FitnessPlan.UserId == userId)
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId != null && FitnessPlan.UserId == userId)
             _isOwnPlan = true;
         _fullName = $"{FitnessPlan.User.FirstName} {FitnessPlan.User.LastName}";
 

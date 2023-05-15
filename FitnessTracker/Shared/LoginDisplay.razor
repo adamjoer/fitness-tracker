@@ -1,7 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using FitnessTracker.Data
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject UserManager<FitnessTrackerUser> UserManager;
+@inject UserService UserService;
+
 <CascadingAuthenticationState>
     <AuthorizeView>
         <Authorized>
@@ -43,8 +45,10 @@
 
         if (authState.User.Identity is {IsAuthenticated: true })
         {
-            var user = await UserManager.FindByNameAsync(authState.User.Identity?.Name);
-            FullName = $"{user.FirstName} {user.LastName}";
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+            var user = await UserService.GetUser(userId);
+            if (user != null)
+                FullName = $"{user.FirstName} {user.LastName}";
         }
     }
 

@@ -1,10 +1,9 @@
 ﻿@page "/interests"
 @attribute [Authorize]
 
-@using Microsoft.EntityFrameworkCore
 @using FitnessTracker.Data
 @using Microsoft.AspNetCore.Identity
-@inject UserManager<FitnessTrackerUser> UserManager;
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessInterestService FitnessInterestService;
 
@@ -80,7 +79,7 @@ else
     private async Task UpdateUserInterests()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = UserManager.GetUserId(authState.User);
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         UserInterests = await FitnessInterestService.GetUserInterests(userId);
     }
@@ -110,7 +109,7 @@ else
     private async void AddInterest(WorkoutType type)
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = UserManager.GetUserId(authState.User);
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         await FitnessInterestService.AddUserInterest(new FitnessInterest
         {

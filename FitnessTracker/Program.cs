@@ -25,6 +25,7 @@ builder.Services
     .AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<FitnessTrackerUser>>();
 builder.Services.AddScoped<FitnessPlanService>();
 builder.Services.AddScoped<FitnessInterestService>();
+builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
 
