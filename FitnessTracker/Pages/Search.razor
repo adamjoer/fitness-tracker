@@ -1,0 +1,65 @@
+﻿@page "/Search"
+@attribute [Authorize]
+
+@using FitnessTracker.Data
+
+@inject NavigationManager NavigationManager
+@inject FitnessPlanService FitnessPlanService;
+
+<PageTitle>Search | FitnessTracker</PageTitle>
+
+<h1>Search</h1>
+
+@if (_searchResults == null)
+{
+    <p>Loading...</p>
+}
+else if (!_searchResults.Any())
+{
+    <p role="alert">No fitness plans found</p>
+    <NavLink href="plans">Perhaps add some yourself?</NavLink>
+}
+else
+{
+    @foreach (var fitnessPlan in _searchResults)
+    {
+        <FitnessPlanDisplay FitnessPlan="@fitnessPlan" OnDelete="HandleDelete"/>
+    }
+}
+
+@code {
+    
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Query { get; set; }
+    
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "type")]
+    public string[]? Types { get; set; }
+
+    private List<string>? _typesList;
+
+    private List<FitnessPlan>? _searchResults;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Query == null && (Types == null || !Types.Any()))
+        {
+            NavigationManager.NavigateTo($"/");
+            return;
+        }
+
+        if (Types != null)
+            _typesList = new List<string>(Types);
+
+        _searchResults = await FitnessPlanService.SearchForFitnessPlans(Query, _typesList);
+    }
+
+    private async void HandleDelete(FitnessPlan plan)
+    {
+        await FitnessPlanService.RemoveFitnessPlan(plan);
+        _searchResults?.Remove(plan);
+        StateHasChanged();
+    }
+
+}

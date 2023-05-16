@@ -1,0 +1,29 @@
+﻿@using FitnessTracker.Data
+@using System.Text
+@inject NavigationManager NavigationManager
+
+<form class="search-bar-wrapper" @onsubmit="HandleSearch">
+    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes" CanAddNewTypes="false"/>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+</form>
+
+@code {
+
+    private List<WorkoutType> _workoutTypes = new();
+    
+    private void HandleSearch()
+    {
+        if (!_workoutTypes.Any())
+            return;
+
+        var parameters = new StringBuilder();
+        for (var i = 0; i < _workoutTypes.Count; ++i)
+        {
+            if (i > 0)
+                parameters.Append('&');
+            parameters.Append("type=").Append(Uri.EscapeDataString(_workoutTypes[i].Name));
+        }
+
+        NavigationManager.NavigateTo($"search?{parameters}");
+    }
+}

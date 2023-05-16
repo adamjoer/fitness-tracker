@@ -33,11 +33,11 @@ main {
 }
 
 @media (max-width: 640.98px) {
-    .top-row:not(.auth) {
+    .top-row:not(.search) {
         display: none;
     }
 
-    .top-row.auth {
+    .top-row.search {
         justify-content: space-between;
     }
 
