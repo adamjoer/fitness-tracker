@@ -14,9 +14,17 @@ public class UserService
         MemoryCache = memoryCache;
     }
 
-    public async Task<FitnessTrackerUser?> GetUser(string id)
+    public Task<FitnessTrackerUser?> GetUser(string id)
     {
-        await using var context = await _dbContextFactory.CreateDbContextAsync();
-        return await context.Users.FindAsync(id);
+        return MemoryCache.GetOrCreateAsync($"GetUser:{id}", async e =>
+        {
+            e.SetOptions(new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+            });
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            return await context.Users.FindAsync(id);
+        });
     }
 }
