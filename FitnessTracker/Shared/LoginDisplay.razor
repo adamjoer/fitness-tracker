@@ -46,9 +46,7 @@
         if (authState.User.Identity is {IsAuthenticated: true })
         {
             var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-            var user = await UserService.GetUser(userId);
-            if (user != null)
-                FullName = $"{user.FirstName} {user.LastName}";
+            FullName = await UserService.GetUserFullName(userId) ?? string.Empty;
         }
     }
 
