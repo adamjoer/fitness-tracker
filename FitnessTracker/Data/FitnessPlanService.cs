@@ -16,7 +16,7 @@ public class FitnessPlanService
 
     public Task<List<FitnessPlan>> GetUsersFitnessPlans(string userId)
     {
-        return MemoryCache.GetOrCreateAsync($"{typeof(List<FitnessPlan>)}{userId}", async e =>
+        return MemoryCache.GetOrCreateAsync($"GetUsersFitnessPlans:{userId}", async e =>
         {
             e.SetOptions(new MemoryCacheEntryOptions
             {
@@ -40,7 +40,7 @@ public class FitnessPlanService
 
     public Task<FitnessPlan?> GetFitnessPlan(string fitnessPlanId)
     {
-        return MemoryCache.GetOrCreateAsync($"{typeof(FitnessPlan)}{fitnessPlanId}", async e =>
+        return MemoryCache.GetOrCreateAsync($"GetFitnessPlan:{fitnessPlanId}", async e =>
         {
             e.SetOptions(new MemoryCacheEntryOptions
             {
