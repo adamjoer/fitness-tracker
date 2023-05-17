@@ -1,4 +1,13 @@
-.search-bar-wrapper {
-    display: flex;
-    flex-direction: row;
+.search-bar-wrapper * {
+    display: inline-block;
+    float: left;
+}
+
+.search-bar-wrapper span {
+    margin-left: 5px;
+}
+
+.search-bar-wrapper .type-search-bar,
+.search-bar-wrapper .title-search-bar {
+    min-width: 200px;
 }

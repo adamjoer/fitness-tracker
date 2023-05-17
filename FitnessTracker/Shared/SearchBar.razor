@@ -2,12 +2,20 @@
 @using System.Text
 @inject NavigationManager NavigationManager
 
-<form class="search-bar-wrapper" @onsubmit="HandleSearch">
-    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes" CanAddNewTypes="false"/>
-    <input @bind="_searchQuery" placeholder="Search for plan title" class="form-control"/>
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-search"></i>
-    </button>
+<form @onsubmit="HandleSearch">
+    <div class="search-bar-wrapper">
+        <span class="type-search-bar">
+            <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes" CanAddNewTypes="false"/>
+        </span>
+        <span class="title-search-bar">
+            <input @bind="_searchQuery" placeholder="Search for plan title" class="form-control"/>
+        </span>
+        <span>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+            </button>
+        </span>
+    </div>
 </form>
 
 @code {

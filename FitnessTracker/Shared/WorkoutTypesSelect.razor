@@ -19,7 +19,7 @@ shamelessly stolen from:
         }
 
         <div>
-            <input placeholder="Search for workout types" @bind="_searchQuery" @oninput="HandleInput" autocomplete="off"/>
+            <input placeholder="Search for workout types" @bind="_searchQuery" @oninput="HandleInput" autocomplete="off" class="form-control"/>
             @if (_searchResults is not null)
             {
                 <ul class="search-results">
