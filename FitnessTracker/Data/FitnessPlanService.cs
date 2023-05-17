@@ -82,45 +82,117 @@ public class FitnessPlanService
         await context.SaveChangesAsync();
     }
 
-    public async Task<List<FitnessPlan>> SearchForFitnessPlans(string? query, List<string>? typeNames)
+    public Task<List<FitnessPlan>> SearchForFitnessPlans(string? query, List<string>? typeNames)
     {
         if ((query == null || !query.Any()) && (typeNames == null || !typeNames.Any()))
-            return new List<FitnessPlan>();
+            return Task.FromResult(new List<FitnessPlan>());
 
         if (query == null || !query.Any())
-            return await SearchForFitnessPlansByTags(typeNames);
+            return SearchForFitnessPlansByTags(typeNames);
 
-        return new List<FitnessPlan>();
+        if ((typeNames == null || !typeNames.Any()))
+            return SearchForFitnessPlansByTitle(query!);
+
+        var lowerCaseQuery = query.ToLowerInvariant();
+        return MemoryCache.GetOrCreateAsync($"SearchForFitnessPlans:{lowerCaseQuery},{string.Join("", typeNames)}",
+            async e =>
+            {
+                e.SetOptions(new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+                });
+
+                await using var context = await _dbContextFactory.CreateDbContextAsync();
+                var typeIds = await context.WorkoutTypes
+                    .Where(tag => typeNames.Contains(tag.Name))
+                    .Select(tag => tag.Id)
+                    .ToListAsync();
+
+                // From https://stackoverflow.com/a/3479273/18713517
+                IQueryable<string> subQuery =
+                    from tag in context.WorkoutTypeTags
+                    where typeIds.Contains(tag.TypeId)
+                    group tag.Id by tag.PlanId
+                    into g
+                    where g.Distinct().Count() == typeIds.Count
+                    select g.Key;
+
+                return await context.FitnessPlans
+                    .Where(plan => plan.Title.Contains(lowerCaseQuery) &&
+                                   subQuery.Contains(plan.Id))
+                    .Include(plan => plan.User)
+                    .Include(plan => plan.WorkoutItems
+                        .OrderBy(item => item.Index))
+                    .Include(plan => plan.WorkoutTypeTags
+                        .OrderBy(tag => tag.Type.Name))
+                    .ThenInclude(tag => tag.Type)
+                    .AsSplitQuery()
+                    .OrderByDescending(plan => plan.Date)
+                    .ToListAsync();
+            });
     }
 
-    public async Task<List<FitnessPlan>> SearchForFitnessPlansByTags(List<string> typeNames)
+    public Task<List<FitnessPlan>> SearchForFitnessPlansByTags(List<string> typeNames)
     {
-        await using var context = await _dbContextFactory.CreateDbContextAsync();
-        var typeIds = await context.WorkoutTypes
-            .Where(tag => typeNames.Contains(tag.Name))
-            .Select(tag => tag.Id)
-            .ToListAsync();
+        return MemoryCache.GetOrCreateAsync($"SearchForFitnessPlansByTags:{string.Join("", typeNames)}", async e =>
+        {
+            e.SetOptions(new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+            });
 
-        // From https://stackoverflow.com/a/3479273/18713517
-        IQueryable<string> subQuery =
-            from tag in context.WorkoutTypeTags
-            where typeIds.Contains(tag.TypeId)
-            group tag.Id by tag.PlanId
-            into g
-            where g.Distinct().Count() == typeIds.Count
-            select g.Key;
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var typeIds = await context.WorkoutTypes
+                .Where(tag => typeNames.Contains(tag.Name))
+                .Select(tag => tag.Id)
+                .ToListAsync();
 
-        return await context.FitnessPlans
-            .Where(plan => subQuery.Contains(plan.Id))
-            .Include(plan => plan.User)
-            .Include(plan => plan.WorkoutItems
-                .OrderBy(item => item.Index))
-            .Include(plan => plan.WorkoutTypeTags
-                .OrderBy(tag => tag.Type.Name))
-            .ThenInclude(tag => tag.Type)
-            .AsSplitQuery()
-            .OrderByDescending(plan => plan.Date)
-            .ToListAsync();
+            // From https://stackoverflow.com/a/3479273/18713517
+            IQueryable<string> subQuery =
+                from tag in context.WorkoutTypeTags
+                where typeIds.Contains(tag.TypeId)
+                group tag.Id by tag.PlanId
+                into g
+                where g.Distinct().Count() == typeIds.Count
+                select g.Key;
+
+            return await context.FitnessPlans
+                .Where(plan => subQuery.Contains(plan.Id))
+                .Include(plan => plan.User)
+                .Include(plan => plan.WorkoutItems
+                    .OrderBy(item => item.Index))
+                .Include(plan => plan.WorkoutTypeTags
+                    .OrderBy(tag => tag.Type.Name))
+                .ThenInclude(tag => tag.Type)
+                .AsSplitQuery()
+                .OrderByDescending(plan => plan.Date)
+                .ToListAsync();
+        });
+    }
+
+    public Task<List<FitnessPlan>> SearchForFitnessPlansByTitle(string query)
+    {
+        var lowerCaseQuery = query.ToLowerInvariant();
+        return MemoryCache.GetOrCreateAsync($"SearchForFitnessPlansByTitle:{lowerCaseQuery}", async e =>
+        {
+            e.SetOptions(new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+            });
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            return await context.FitnessPlans
+                .Where(plan => plan.Title.Contains(lowerCaseQuery))
+                .Include(plan => plan.User)
+                .Include(plan => plan.WorkoutItems
+                    .OrderBy(item => item.Index))
+                .Include(plan => plan.WorkoutTypeTags
+                    .OrderBy(tag => tag.Type.Name))
+                .ThenInclude(tag => tag.Type)
+                .AsSplitQuery()
+                .OrderByDescending(plan => plan.Date)
+                .ToListAsync();
+        });
     }
 
     public async Task AddWorkoutItemToPlan(FitnessPlan plan, WorkoutItem item)
