@@ -77,7 +77,8 @@
     position: absolute;
     background: white;
     box-sizing: content-box;
-    width: 100%;
+    min-width: 100%;
+    width: fit-content;
     padding: 0;
     z-index: 10;
     border: 1px solid #ced4da;
