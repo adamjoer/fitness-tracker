@@ -28,11 +28,11 @@ else
 }
 
 @code {
-    
+
     [Parameter]
     [SupplyParameterFromQuery]
     public string? Query { get; set; }
-    
+
     [Parameter]
     [SupplyParameterFromQuery(Name = "type")]
     public string[]? Types { get; set; }
@@ -41,7 +41,7 @@ else
 
     private List<FitnessPlan>? _searchResults;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         if (Query == null && (Types == null || !Types.Any()))
         {
