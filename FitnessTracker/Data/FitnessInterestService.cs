@@ -45,8 +45,7 @@ public class FitnessInterestService
         await context.SaveChangesAsync();
     }
 
-    public Task<List<WorkoutType>> SearchForWorkoutType(string searchQuery,
-        List<WorkoutType>? exclusionList = null)
+    public Task<List<WorkoutType>> SearchForWorkoutType(string searchQuery)
     {
         var lowerCaseSearchQuery = searchQuery.ToLowerInvariant();
 
@@ -58,13 +57,6 @@ public class FitnessInterestService
             });
 
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            if (exclusionList != null)
-                return await context.WorkoutTypes
-                    .Where(type => !exclusionList.Contains(type))
-                    .Where(type => type.Name.Contains(lowerCaseSearchQuery))
-                    .ToListAsync();
-
             return await context.WorkoutTypes
                 .Where(type => type.Name.Contains(lowerCaseSearchQuery))
                 .ToListAsync();
@@ -78,5 +70,26 @@ public class FitnessInterestService
         var newWorkoutType = context.WorkoutTypes.Add(type);
         await context.SaveChangesAsync();
         return newWorkoutType.Entity;
+    }
+
+    public async Task<IEnumerable<WorkoutType>> AddWorkoutTypes(IEnumerable<WorkoutType> types)
+    {
+        var lowerCaseTypes = types.Select(type => new WorkoutType()
+        {
+            Name = type.Name.ToLowerInvariant()
+        }).ToList();
+
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+        // FIXME: This is a pretty inefficient way to check for already added workout types.
+        //        However, EF can't translate `.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name))`
+        //        to a database operation, so for now we just query for all types, and check against that list.
+        var alreadyExistingTypes = await context.WorkoutTypes.ToListAsync();
+        var duplicateTypes = alreadyExistingTypes.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name)).ToList();
+        lowerCaseTypes.RemoveAll(type => duplicateTypes.Any(x => x.Name == type.Name));
+
+        context.AddRange(lowerCaseTypes);
+        await context.SaveChangesAsync();
+        return lowerCaseTypes.Concat(duplicateTypes);
     }
 }

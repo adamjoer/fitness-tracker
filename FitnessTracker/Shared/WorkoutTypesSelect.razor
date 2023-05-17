@@ -10,7 +10,7 @@ shamelessly stolen from:
 *@
 
 <div class="wrapper">
-    <div class="types-input">
+    <div class="types-input form-control">
         @foreach (var type in WorkoutTypes)
         {
             <span class="type">
@@ -19,7 +19,7 @@ shamelessly stolen from:
         }
 
         <div>
-            <input placeholder="Add workout types" @bind="_searchQuery" @oninput="HandleInput" class="form-control filter" autocomplete="off"/>
+            <input placeholder="Search for workout types" @bind="_searchQuery" @oninput="HandleInput" autocomplete="off"/>
             @if (_searchResults is not null)
             {
                 <ul class="search-results">
@@ -61,7 +61,9 @@ shamelessly stolen from:
         _searchQuery = e.Value?.ToString() ?? string.Empty;
         if (_searchQuery.Any() && Regex.IsMatch(_searchQuery, @"^[a-zA-Z0-9-_]{1,256}$"))
         {
-            _searchResults = await FitnessInterestService.SearchForWorkoutType(_searchQuery, WorkoutTypes);
+            _searchResults = (await FitnessInterestService.SearchForWorkoutType(_searchQuery))
+                .Where(plan => !WorkoutTypes.Exists(x => x.Id == plan.Id))
+                .ToList();
             _canAddNewType = (_searchResults.Any() && !_searchResults.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase))) ||
                              (!_searchResults.Any() && !WorkoutTypes.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase)));
         }

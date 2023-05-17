@@ -6,6 +6,38 @@
 @inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
+@inject FitnessInterestService FitnessInterestService;
+
+@if (_isOwnPlan)
+{
+    <Modal @ref="modalRef">
+        <ModalContent Centered>
+            <EditForm Model="@_editFitnessPlan" OnSubmit="@HandleSubmit">
+                <ModalHeader>
+                    <ModalTitle>Edit Fitness Plan</ModalTitle>
+                    <CloseButton/>
+                </ModalHeader>
+                <ModalBody>
+                    <label for="fitness-plan-title-input" class="form-label">Title</label>
+                    <InputText placeholder="Title" @bind-Value="_editFitnessPlan.Title" id="fitness-plan-title-input" class="form-control"/>
+
+                    <label for="fitness-plan-date-input" class="form-label">Date</label>
+                    <InputDate @bind-Value="_editFitnessPlan.Date" id="fitness-plan-date-input" class="form-control"/>
+
+                    <label class="form-label">Workout types</label>
+                    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
+
+                    <label for="fitness-plan-intensity-input" class="form-label">Intensity</label>
+                    <InputNumber @bind-Value="_editFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Danger" Clicked="@HandleDelete">Delete</Button>
+                    <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
+                </ModalFooter>
+            </EditForm>
+        </ModalContent>
+    </Modal>
+}
 
 <div class="card">
     <NavLink href=@($"plans/{FitnessPlan.Id}")>
@@ -13,6 +45,10 @@
     </NavLink>
     <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
     <p>Intensity: @FitnessPlan.Intensity</p>
+    @if (_isOwnPlan)
+    {
+        <Button Color="Color.Primary" Clicked="@ShowModal">Edit</Button>
+    }
     <ul class="list-group list-group-flush">
         @if (_isOwnPlan)
         {
@@ -73,11 +109,35 @@
     [Parameter, EditorRequired]
     public FitnessPlan FitnessPlan { get; set; } = null!;
 
+    [Parameter]
+    public EventCallback<FitnessPlan> OnDelete { get; set; }
+
     private EditContext? _editContext;
 
     private WorkoutItem _newItem = new();
 
     private bool _isOwnPlan;
+
+    private FitnessPlan _editFitnessPlan = new();
+
+    private List<WorkoutType> _workoutTypes = new();
+
+    private Modal modalRef;
+
+    private Task ShowModal()
+    {
+        _editFitnessPlan = new FitnessPlan()
+        {
+            Id = FitnessPlan.Id,
+            Date = FitnessPlan.Date,
+            Intensity = FitnessPlan.Intensity,
+            Title = FitnessPlan.Title,
+            UserId = FitnessPlan.UserId,
+        };
+        _workoutTypes = FitnessPlan.WorkoutTypeTags.Select(tag => tag.Type).ToList();
+
+        return modalRef.Show();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -117,6 +177,55 @@
         await FitnessPlanService.RemoveWorkoutItem(item);
         FitnessPlan.WorkoutItems.Remove(item);
         StateHasChanged();
+    }
+
+    private async void HandleSubmit()
+    {
+        var planHasChanged = false;
+        if (_editFitnessPlan.Title != FitnessPlan.Title ||
+            _editFitnessPlan.Date != FitnessPlan.Date ||
+            _editFitnessPlan.Intensity != FitnessPlan.Intensity)
+        {
+            await FitnessPlanService.UpdateFitnessPlan(_editFitnessPlan);
+            planHasChanged = true;
+        }
+
+        var addedWorkoutTypes = _workoutTypes
+            .Where(type => !FitnessPlan.WorkoutTypeTags.Any(x => x.Type.Name == type.Name));
+        if (addedWorkoutTypes.Any())
+        {
+            await FitnessPlanService.AddWorkoutTypeTagsToPlan(_editFitnessPlan, addedWorkoutTypes.Where(type => type.Id != null));
+
+            var newWorkoutTypes = addedWorkoutTypes.Where(type => type.Id == null);
+            if (newWorkoutTypes.Any())
+            {
+                newWorkoutTypes = await FitnessInterestService.AddWorkoutTypes(newWorkoutTypes);
+                await FitnessPlanService.AddWorkoutTypeTagsToPlan(_editFitnessPlan, newWorkoutTypes);
+            }
+            planHasChanged = true;
+        }
+
+        var removedWorkoutTypeTags = FitnessPlan.WorkoutTypeTags
+            .Where(tag => !_workoutTypes.Any(x => x.Name == tag.Type.Name));
+        if (removedWorkoutTypeTags.Any())
+        {
+            await FitnessPlanService.RemoveWorkoutTypeTags(removedWorkoutTypeTags);
+            planHasChanged = true;
+        }
+
+        if (planHasChanged)
+        {
+            FitnessPlan = (await FitnessPlanService.GetFitnessPlan(FitnessPlan.Id!))!;
+            StateHasChanged();
+        }
+
+        await modalRef.Hide();
+    }
+
+    private async void HandleDelete()
+    {
+        await modalRef.Hide();
+        await OnDelete.InvokeAsync(FitnessPlan);
     }
 
 }
