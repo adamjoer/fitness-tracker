@@ -38,10 +38,52 @@ public class FitnessInterestService
         await context.SaveChangesAsync();
     }
 
+    public async Task AddUserInterestTypes(string userId, IEnumerable<WorkoutType> types)
+    {
+        var newInterests = types.Select(type => new FitnessInterest()
+        {
+            UserId = userId,
+            TypeId = type.Id!,
+            Intensity = 1,
+        });
+
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessInterests.AddRange(newInterests);
+        await context.SaveChangesAsync();
+    }
+
     public async Task UpdateUserInterest(FitnessInterest interest)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.FitnessInterests.Update(interest);
+        context.FitnessInterests.Update(new FitnessInterest()
+        {
+            Id = interest.Id,
+            UserId = interest.UserId,
+            TypeId = interest.TypeId,
+            Intensity = interest.Intensity,
+        });
+        await context.SaveChangesAsync();
+    }
+
+    public async Task RemoveUserInterest(FitnessInterest interest)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessInterests.Remove(interest);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task RemoveUserInterests(IEnumerable<FitnessInterest> interests)
+    {
+        interests = interests.Select(interest => new FitnessInterest()
+        {
+            Id = interest.Id,
+            TypeId = interest.TypeId,
+            UserId = interest.UserId,
+            Intensity = interest.Intensity,
+        });
+
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessInterests.RemoveRange(interests);
         await context.SaveChangesAsync();
     }
 
@@ -85,7 +127,8 @@ public class FitnessInterestService
         //        However, EF can't translate `.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name))`
         //        to a database operation, so for now we just query for all types, and check against that list.
         var alreadyExistingTypes = await context.WorkoutTypes.ToListAsync();
-        var duplicateTypes = alreadyExistingTypes.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name)).ToList();
+        var duplicateTypes = alreadyExistingTypes.Where(type => lowerCaseTypes.Exists(x => x.Name == type.Name))
+            .ToList();
         lowerCaseTypes.RemoveAll(type => duplicateTypes.Any(x => x.Name == type.Name));
 
         context.AddRange(lowerCaseTypes);

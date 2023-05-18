@@ -2,7 +2,6 @@
 @attribute [Authorize]
 
 @using FitnessTracker.Data
-@using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessInterestService FitnessInterestService;
@@ -11,65 +10,72 @@
 
 <h1>Interests</h1>
 
-<h3>Your interests</h3>
 @if (UserInterests == null)
 {
     <p>Loading...</p>
 }
-else if (UserInterests.Count <= 0)
+else if (!UserInterests.Any())
 {
     <p>No interests found! Add some below</p>
 }
 else
 {
-    <ol>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Intensity</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
         @foreach (var interest in UserInterests)
         {
-            <li>
-                @interest.Type.Name
-                @interest.Intensity
-            </li>
+            <tr>
+                <td class="type-display">@interest.Type.Name</td>
+                <td>
+                    <select @oninput="@((args) => HandleInterestChange(args, interest))" @bind="@interest.Intensity">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td>
+                    <button type="button" @onclick="@(() => DeleteInterest(interest))">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </td>
+            </tr>
         }
-    </ol>
+        </tbody>
+    </table>
 }
 
-<h3>Search for new interests</h3>
-<form @onsubmit="@OnSearch">
-    <input @bind="@SearchQuery"/>
+<form @onsubmit="OnSubmit" class="interests-edit-form" style="display: @(_addNewItem ? "flex" : "none")">
+    <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg"></i>
+    </button>
 </form>
 
-@if (SearchResults == null)
-{
-    <p>Search for workout types</p>
-}
-else if (SearchResults.Count <= 0)
-{
-    <p>No results!</p>
-    <button @onclick="@OnSubmit">Submit</button>
-}
-else
-{
-    <ol style="text-transform: capitalize">
-        @foreach (var result in SearchResults)
-        {
-            <li>
-                @result.Name
-                @if (UserInterests != null && !UserInterests.Exists(foo => foo.TypeId == result.Id))
-                {
-                    <button @onclick="() => AddInterest(result)">Add to your interests</button>
-                }
-            </li>
-        }
-    </ol>
-}
+<button type="button" class="btn btn-primary" @onclick="OnEditInterests" style="display: @(_addNewItem ? "none" : "block")">
+    <i class="bi bi-pencil-square"></i>
+</button>
 
 @code {
 
     private List<FitnessInterest>? UserInterests { get; set; }
 
-    private string SearchQuery { get; set; } = string.Empty;
+    private List<WorkoutType> _workoutTypes = new();
 
-    private List<WorkoutType>? SearchResults { get; set; }
+    private bool _addNewItem = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,41 +90,56 @@ else
         UserInterests = await FitnessInterestService.GetUserInterests(userId);
     }
 
-    private async void OnSearch()
+    private async void HandleInterestChange(ChangeEventArgs e, FitnessInterest interest)
     {
-        if (SearchQuery.Length is <= 0 or > 256)
-        {
-            SearchResults = null;
-            return;
-        }
-
-        SearchResults = await FitnessInterestService.SearchForWorkoutType(SearchQuery);
+        var newIntensity = Convert.ToInt32(e.Value!.ToString());
+        interest.Intensity = newIntensity;
+        await FitnessInterestService.UpdateUserInterest(interest);
         StateHasChanged();
+    }
+
+    private void OnEditInterests()
+    {
+        _addNewItem = true;
+        _workoutTypes = UserInterests?.Select(interest => interest.Type).ToList() ?? new List<WorkoutType>();
     }
 
     private async void OnSubmit()
     {
-        await FitnessInterestService.AddWorkoutType(new WorkoutType
-        {
-            Name = SearchQuery
-        });
+        if (UserInterests == null)
+            return;
 
-        OnSearch();
+        var addedWorkoutTypes = _workoutTypes
+            .Where(type => !UserInterests.Any(x => x.Type.Name == type.Name));
+        if (addedWorkoutTypes.Any())
+        {
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+            await FitnessInterestService.AddUserInterestTypes(userId, addedWorkoutTypes.Where(type => type.Id != null));
+
+            var newWorkoutTypes = addedWorkoutTypes.Where(type => type.Id == null);
+            if (newWorkoutTypes.Any())
+            {
+                newWorkoutTypes = await FitnessInterestService.AddWorkoutTypes(newWorkoutTypes);
+                await FitnessInterestService.AddUserInterestTypes(userId, newWorkoutTypes);
+            }
+        }
+
+        var removedUserInterests = UserInterests
+            .Where(interest => !_workoutTypes.Any(x => x.Name == interest.Type.Name));
+        if (removedUserInterests.Any())
+            await FitnessInterestService.RemoveUserInterests(removedUserInterests);
+
+        _addNewItem = false;
+        await UpdateUserInterests();
+        StateHasChanged();
     }
 
-    private async void AddInterest(WorkoutType type)
+    private async void DeleteInterest(FitnessInterest interest)
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-
-        await FitnessInterestService.AddUserInterest(new FitnessInterest
-        {
-            Intensity = new Random().Next(1, 10),
-            TypeId = type.Id!,
-            UserId = userId
-        });
-
-        await UpdateUserInterests();
+        await FitnessInterestService.RemoveUserInterest(interest);
+        UserInterests?.Remove(interest);
         StateHasChanged();
     }
 
