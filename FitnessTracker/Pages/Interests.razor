@@ -2,7 +2,6 @@
 @attribute [Authorize]
 
 @using FitnessTracker.Data
-@using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessInterestService FitnessInterestService;
@@ -11,26 +10,52 @@
 
 <h1>Interests</h1>
 
-<h3>Your interests</h3>
 @if (UserInterests == null)
 {
     <p>Loading...</p>
 }
-else if (UserInterests.Count <= 0)
+else if (!UserInterests.Any())
 {
     <p>No interests found! Add some below</p>
 }
 else
 {
-    <ol>
-        @foreach (var interest in UserInterests)
-        {
-            <li>
-                @interest.Type.Name
-                @interest.Intensity
-            </li>
-        }
-    </ol>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Intensity</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+            @foreach (var interest in UserInterests)
+            {
+                <tr>
+                    <td class="type-display">@interest.Type.Name</td>
+                    <td>
+                        <select @oninput="@((args) => HandleInterestChange(args, interest))" @bind="@interest.Intensity">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button type="button" @onclick="@(() => DeleteInterest(interest))">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 <h3>Search for new interests</h3>
@@ -84,6 +109,14 @@ else
         UserInterests = await FitnessInterestService.GetUserInterests(userId);
     }
 
+    private async void HandleInterestChange(ChangeEventArgs e, FitnessInterest interest)
+    {
+        var newIntensity = Convert.ToInt32(e.Value!.ToString());
+        interest.Intensity = newIntensity;
+        await FitnessInterestService.UpdateUserInterest(interest);
+        StateHasChanged();
+    }
+
     private async void OnSearch()
     {
         if (SearchQuery.Length is <= 0 or > 256)
@@ -119,6 +152,13 @@ else
         });
 
         await UpdateUserInterests();
+        StateHasChanged();
+    }
+
+    private async void DeleteInterest(FitnessInterest interest)
+    {
+        await FitnessInterestService.RemoveUserInterest(interest);
+        UserInterests?.Remove(interest);
         StateHasChanged();
     }
 

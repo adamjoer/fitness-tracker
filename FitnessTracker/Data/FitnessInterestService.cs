@@ -41,10 +41,23 @@ public class FitnessInterestService
     public async Task UpdateUserInterest(FitnessInterest interest)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync();
-        context.FitnessInterests.Update(interest);
+        context.FitnessInterests.Update(new FitnessInterest()
+        {
+            Id = interest.Id,
+            UserId = interest.UserId,
+            TypeId = interest.TypeId,
+            Intensity = interest.Intensity,
+        });
         await context.SaveChangesAsync();
     }
 
+    public async Task RemoveUserInterest(FitnessInterest interest)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync();
+        context.FitnessInterests.Remove(interest);
+        await context.SaveChangesAsync();
+    }
+    
     public Task<List<WorkoutType>> SearchForWorkoutType(string searchQuery)
     {
         var lowerCaseSearchQuery = searchQuery.ToLowerInvariant();
