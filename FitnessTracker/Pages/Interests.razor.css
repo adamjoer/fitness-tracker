@@ -10,3 +10,8 @@ td button {
     font: inherit;
     outline: inherit;
 }
+
+.interests-edit-form {
+    display: flex;
+    flex-direction: row;
+}
