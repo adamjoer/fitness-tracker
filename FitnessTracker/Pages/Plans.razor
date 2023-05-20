@@ -3,7 +3,7 @@
 
 @using FitnessTracker.Data
 @using Microsoft.AspNetCore.Identity
-@inject UserManager<FitnessTrackerUser> UserManager;
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
 @inject FitnessInterestService FitnessInterestService;
@@ -31,7 +31,18 @@
                 <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
 
                 <label for="fitness-plan-intensity-input" class="form-label">Intensity</label>
-                <InputNumber @bind-Value="_submitFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
+                    <InputSelect @bind-Value="_submitFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </InputSelect>
             </ModalBody>
             <ModalFooter>
                 <Button Color="Color.Primary" Type="ButtonType.Submit">Save Changes</Button>
@@ -77,7 +88,7 @@ else
     private async void HandleSubmit()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        _submitFitnessPlan.UserId = UserManager.GetUserId(authState.User);
+        _submitFitnessPlan.UserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         var fitnessPlan = await FitnessPlanService.AddFitnessPlan(_submitFitnessPlan);
         if (_workoutTypes.Any())
@@ -114,7 +125,7 @@ else
     private async Task LoadFitnessPlans()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = UserManager.GetUserId(authState.User);
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         FitnessPlans = await FitnessPlanService.GetUsersFitnessPlans(userId);
         StateHasChanged();
     }

@@ -1,9 +1,9 @@
 ﻿@using FitnessTracker.Data
 @using System.Globalization
+@using System.Security.Claims
 @using Humanizer
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@inject UserManager<FitnessTrackerUser> UserManager;
 @inject AuthenticationStateProvider AuthProvider;
 @inject FitnessPlanService FitnessPlanService;
 @inject FitnessInterestService FitnessInterestService;
@@ -28,7 +28,18 @@
                     <WorkoutTypesSelect @bind-WorkoutTypes="_workoutTypes"/>
 
                     <label for="fitness-plan-intensity-input" class="form-label">Intensity</label>
-                    <InputNumber @bind-Value="_editFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control"/>
+                    <InputSelect @bind-Value="_editFitnessPlan.Intensity" id="fitness-plan-intensity-input" class="form-control">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </InputSelect>
                 </ModalBody>
                 <ModalFooter>
                     <Button Color="Color.Danger" Clicked="@HandleDelete">Delete</Button>
@@ -39,67 +50,101 @@
     </Modal>
 }
 
-<div class="card">
-    <NavLink href=@($"plans/{FitnessPlan.Id}")>
-        <h5 class="card-title">@FitnessPlan.Title</h5>
-    </NavLink>
-    <p>@FitnessPlan.Date.ToString(CultureInfo.CurrentCulture)</p>
-    <p>Intensity: @FitnessPlan.Intensity</p>
-    @if (_isOwnPlan)
-    {
-        <Button Color="Color.Primary" Clicked="@ShowModal">Edit</Button>
-    }
-    <ul class="list-group list-group-flush">
-        @if (_isOwnPlan)
-        {
-            <EditForm EditContext="@_editContext">
-                @foreach (var item in FitnessPlan.WorkoutItems)
-                {
-                    <li class="list-group-item" style="display: flex; justify-content: space-between">
-                        <div>
-                            <b>@item.Title</b>
-                            <InputCheckbox @bind-Value="item.IsCompleted"/>
-                        </div>
-                        <div>
-                            @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.First())
-                            {
-                                <button @onclick="() => MoveItem(item, true)">Up</button>
-                            }
-                            @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.Last())
-                            {
-                                <button @onclick="() => MoveItem(item, false)">Down</button>
-                            }
-                            <button @onclick="() => DeleteItem(item)">Delete</button>
-                        </div>
-                    </li>
-                }
-            </EditForm>
-            <li class="list-group-item">
-                <EditForm Model="@_newItem" OnSubmit="@HandleItemSubmit">
-                    <InputText @bind-Value="@_newItem.Title"/>
-                    <InputCheckbox @bind-Value="@_newItem.IsCompleted"/>
-                    <button type="submit">Add</button>
-                </EditForm>
-            </li>
-        }
-        else
-        {
-            @foreach (var item in FitnessPlan.WorkoutItems)
+<div class="card fitness-plan-container">
+
+    <div class="title-background">
+        <a href=@($"plans/{FitnessPlan.Id}")>
+            <h3 class="card-title">@FitnessPlan.Title</h3>
+        </a>
+    </div>
+    <div class="additional-info">
+        <span>@_fullName • @FitnessPlan.Intensity/10</span>
+        <span>@FitnessPlan.Date.ToString("D", CultureInfo.CurrentCulture)</span>
+    </div>
+
+    <div class="card-body">
+        <ul>
+            @if (_isOwnPlan)
             {
-                <li class="list-group-item">
-                    <b>@item.Title</b>
-                    <input type="checkbox" disabled="disabled" checked="@item.IsCompleted"/>
+                <EditForm EditContext="@_editContext">
+                    @foreach (var item in FitnessPlan.WorkoutItems)
+                    {
+                        <li>
+                            <span class="item-title">
+                                <InputCheckbox @bind-Value="item.IsCompleted"/>
+                                <b>@item.Title</b>
+                            </span>
+                            <span class="buttons">
+                                <span class="move-arrows">
+                                    @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.First())
+                                    {
+                                        <button type="button" @onclick="() => MoveItem(item, true)">
+                                            <i class="bi bi-caret-up"></i>
+                                        </button>
+                                    }
+                                    @if (FitnessPlan.WorkoutItems.Count > 1 && item != FitnessPlan.WorkoutItems.Last())
+                                    {
+                                        <button type="button" @onclick="() => MoveItem(item, false)">
+                                            <i class="bi bi-caret-down"></i>
+                                        </button>
+                                    }
+                                </span>
+                                <button type="button" @onclick="() => DeleteItem(item)">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </span>
+                        </li>
+                    }
+                </EditForm>
+
+                <li style="display: @(_addNewItem ? "flex" : "none")">
+                    <EditForm Model="@_newItem" OnSubmit="@HandleItemSubmit">
+                        <span class="item-title">
+                            <InputCheckbox @bind-Value="@_newItem.IsCompleted"/>
+                            <InputText @bind-Value="@_newItem.Title"/>
+                        </span>
+                        <span class="buttons">
+                            <button type="submit">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                        </span>
+                    </EditForm>
                 </li>
             }
+            else
+            {
+                @foreach (var item in FitnessPlan.WorkoutItems)
+                {
+                    <li>
+                        <span class="item-title">
+                            <input type="checkbox" disabled="disabled" checked="@item.IsCompleted"/>
+                            <b>@item.Title</b>
+                        </span>
+                    </li>
+                }
+            }
+        </ul>
+
+        @if (_isOwnPlan)
+        {
+            <button type="button" class="btn btn-primary" @onclick="() => _addNewItem = !_addNewItem" style="display: @(_addNewItem ? "none" : "inline-block")">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+            <button type="button" class="btn btn-primary" @onclick="ShowModal">
+                <i class="bi bi-pencil-square"></i>
+            </button>
         }
-    </ul>
+    </div>
+
     @if (FitnessPlan.WorkoutTypeTags.Any())
     {
         <div class="card-footer">
-            @foreach (var tag in FitnessPlan.WorkoutTypeTags)
-            {
-                <span>@tag.Type.Name&nbsp;</span>
-            }
+            <div class="tags">
+                @foreach (var tag in FitnessPlan.WorkoutTypeTags)
+                {
+                    <div class="tag">@tag.Type.Name</div>
+                }
+            </div>
         </div>
     }
 </div>
@@ -117,6 +162,10 @@
     private WorkoutItem _newItem = new();
 
     private bool _isOwnPlan;
+
+    private bool _addNewItem = false;
+
+    private string _fullName = string.Empty;
 
     private FitnessPlan _editFitnessPlan = new();
 
@@ -142,9 +191,10 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userId = UserManager.GetUserId(authState.User);
-        if (FitnessPlan.UserId == userId)
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId != null && FitnessPlan.UserId == userId)
             _isOwnPlan = true;
+        _fullName = $"{FitnessPlan.User.FirstName} {FitnessPlan.User.LastName}";
 
         _editContext = new EditContext(FitnessPlan);
         _editContext.OnFieldChanged += OnFitnessPlanFieldChanged;
@@ -162,6 +212,8 @@
     {
         await FitnessPlanService.AddWorkoutItemToPlan(FitnessPlan, _newItem);
         _newItem = new WorkoutItem();
+
+        _addNewItem = false;
         StateHasChanged();
     }
 

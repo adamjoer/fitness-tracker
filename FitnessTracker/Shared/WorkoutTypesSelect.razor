@@ -19,7 +19,7 @@ shamelessly stolen from:
         }
 
         <div>
-            <input placeholder="Search for workout types" @bind="_searchQuery" @oninput="HandleInput" autocomplete="off"/>
+            <input placeholder="Search for workout types" @bind="_searchQuery" @oninput="HandleInput" autocomplete="off" class="form-control"/>
             @if (_searchResults is not null)
             {
                 <ul class="search-results">
@@ -50,6 +50,9 @@ shamelessly stolen from:
     [Parameter]
     public EventCallback<List<WorkoutType>> WorkoutTypesChanged { get; set; }
 
+    [Parameter]
+    public bool CanAddNewTypes { get; set; } = true;
+
     private string _searchQuery = string.Empty;
 
     private List<WorkoutType>? _searchResults;
@@ -64,8 +67,10 @@ shamelessly stolen from:
             _searchResults = (await FitnessInterestService.SearchForWorkoutType(_searchQuery))
                 .Where(plan => !WorkoutTypes.Exists(x => x.Id == plan.Id))
                 .ToList();
-            _canAddNewType = (_searchResults.Any() && !_searchResults.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase))) ||
-                             (!_searchResults.Any() && !WorkoutTypes.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase)));
+
+            if (CanAddNewTypes)
+                _canAddNewType = (_searchResults.Any() && !_searchResults.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase))) ||
+                                 (!_searchResults.Any() && !WorkoutTypes.Exists(x => x.Name.Equals(_searchQuery, StringComparison.InvariantCultureIgnoreCase)));
         }
         else
         {
